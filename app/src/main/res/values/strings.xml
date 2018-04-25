@@ -1,0 +1,84 @@
+<resources>
+    <string name="app_name">Shit We Need</string>
+
+    <!-- Placeholder values -->
+    <string name="sample_text">Fuck you and your mother</string>
+    <string name="sample_price">$0.00</string>
+    <string name="sample_tax">+ $0.00</string>
+
+    <!-- Values for main activity -->
+    <string name="no_items">You have no items in your shopping list.
+    \nPlease press the + button to add an item.</string>
+
+    <!-- Values for main menu -->
+    <string name="settings">Settings</string>
+
+    <!-- General values for dialogs -->
+    <string name="done">Done</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+
+    <!-- Other general potentially useful values -->
+    <string name="price_prefix">$</string>
+
+    <!-- Values for add item dialog -->
+    <string name="add_item_title">Add new item to shopping list</string>
+    <string name="add_item_hint">Item name</string>
+    <string name="save_prompt">Save this item to the autocomplete dictionary</string>
+    <string name="optional_prompt">Make this item optional</string>
+    <string name="condition_hint">(Optional) Condition to buy item</string>
+    <string name="add_another_item">Add another</string>
+    <string name="add_this_and_finish">Add &amp; finish</string>
+
+    <!-- Values for item options -->
+    <string name="delete">Delete</string>
+
+    <!-- Values for delete item dialog -->
+    <string name="prompt_delete">Are you sure you want to delete this item?</string>
+    <string name="confirm_delete">Yes, delete</string>
+    <string name="cancel_delete">No, cancel</string>
+
+    <!-- Values for delete all items dialog -->
+    <string name="delete_all">Delete all items</string>
+    <string name="prompt_delete_all">You are about to delete all items from the shopping list. This
+    includes unmarked items, confirmed items, and items you have specified that you are not buying.
+    Are you sure you wish to do this?</string>
+    <string name="confirm_delete_all">Yes, delete all items</string>
+    <string name="cancel_delete_all">No, cancel</string>
+
+    <!-- Values for item-specific dialogs -->
+    <string name="per_unit">Per unit</string>
+    <string name="per_pound">Per lb</string>
+    <string name="per_kg">Per kg</string>
+    <string name="pricing">Pricing</string>
+    <string name="price">Price</string>
+    <string name="price_per_unit">Price per unit</string>
+    <string name="price_per_kg">Price per kilogram</string>
+    <string name="price_per_lb">Price per pound</string>
+    <string name="times_sign">&#215;</string>
+    <string name="quantity">Quantity</string>
+    <string name="weight">Weight</string>
+    <string name="kg">kg</string>
+    <string name="lb">lb</string>
+    <string name="oz">oz</string>
+    <string name="total_price_no_tax_title">Total price without tax</string>
+    <string name="tax_title">Tax</string>
+    <string name="total_price_title">Total price including tax</string>
+    <string name="not_buying">I am not buying this</string>
+    <string name="move_to_top">Reset</string>
+    <string name="save_changes">Save changes</string>
+    <string name="do_not_save">Do not save</string>
+    <string name="prompt_restore">You have specified that you are not buying this item. Would you
+    like to restore this item to the shopping list?</string>
+    <string name="confirm_restore">Yes, restore</string>
+    <string name="cancel_restore">No, cancel</string>
+
+    <!-- Values for settings screen -->
+    <string name="budget">Budget</string>
+    <string name="set_maximum_budget">Set maximum budget</string>
+    <string name="maximum_budget">Amount</string>
+
+    <!-- Keys used in settings -->
+    <string name="key_set_maximum_budget_checkbox" translatable="false">set_max_budget</string>
+    <string name="key_maximum_budget_edit_text" translatable="false">max_budget</string>
+</resources>

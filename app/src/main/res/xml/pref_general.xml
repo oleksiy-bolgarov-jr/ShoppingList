@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/budget">
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="@string/key_set_maximum_budget_checkbox"
+            android:title="@string/set_maximum_budget" />
+
+        <EditTextPreference
+            android:defaultValue="100"
+            android:key="@string/key_maximum_budget_edit_text"
+            android:summary="$100"
+            android:title="@string/maximum_budget" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
