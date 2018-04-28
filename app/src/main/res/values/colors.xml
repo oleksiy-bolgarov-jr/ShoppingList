@@ -4,6 +4,9 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 
+    <color name="text_color_price_normal">#000000</color>
+    <color name="text_color_price_over_budget">#F44336</color>
+
     <color name="text_color_dialog_item_title">#80000000</color>
     <color name="text_color_dialog_item_value">#000000</color>
 </resources>

@@ -4,14 +4,14 @@
     <PreferenceCategory android:title="@string/budget">
 
         <CheckBoxPreference
-            android:defaultValue="true"
+            android:defaultValue="@bool/pref_set_budget_default"
             android:key="@string/key_set_maximum_budget_checkbox"
             android:title="@string/set_maximum_budget" />
 
-        <EditTextPreference
-            android:defaultValue="100"
+        <org.bolgarov.alexjr.shoppinglist.preferenceSubclasses.MoneyPreference
+            android:defaultValue="@string/pref_maximum_budget_default"
             android:key="@string/key_maximum_budget_edit_text"
-            android:summary="$100"
+            android:summary="You should not see this text"
             android:title="@string/maximum_budget" />
 
     </PreferenceCategory>

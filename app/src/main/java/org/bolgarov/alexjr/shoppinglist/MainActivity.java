@@ -2,8 +2,10 @@ package org.bolgarov.alexjr.shoppinglist;
 
 import android.arch.persistence.room.Room;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -48,8 +50,10 @@ public class MainActivity extends AppCompatActivity
      * Implement settings
      * Add an autocomplete dictionary
      * Display more information on the items
+     * Implement optional and condition
      * Add the ability to rearrange items
      * Improve the "delete all" option so you can delete from separate categories
+     * Try to prevent user from entering negative values
      */
 
     private static final String UNCHECKED_KEY = "unchecked";
@@ -68,6 +72,10 @@ public class MainActivity extends AppCompatActivity
 
     private LinearLayout mFooter;
     private TextView mTotalPriceTextView;
+
+    // Budget and tax values
+    private boolean mBudgetIsSet;
+    private BigDecimal mBudget;
 
     // Add new item dialog
     private EditText itemNameEditText;
@@ -131,11 +139,26 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        setupBudget();
+
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
                 "shopping_list_items").build();
         switchViews(mShoppingListAdapter.getItemCount() == 0);
 
         new RetrieveItemsTask().execute();
+    }
+
+    private void setupBudget() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        mBudgetIsSet = sp.getBoolean(
+                getString(R.string.key_set_maximum_budget_checkbox),
+                getResources().getBoolean(R.bool.pref_set_budget_default)
+        );
+        String budgetString = sp.getString(
+                getString(R.string.key_maximum_budget_edit_text),
+                getResources().getString(R.string.pref_maximum_budget_default)
+        );
+        mBudget = new BigDecimal(budgetString);
     }
 
     @Override
@@ -790,7 +813,22 @@ public class MainActivity extends AppCompatActivity
      * @param price
      */
     public void updateTotalPrice(BigDecimal price) {
-        mTotalPriceTextView.setText("$" + price.setScale(2, RoundingMode.HALF_UP));
+        String priceString = "$" + price.setScale(2, RoundingMode.HALF_UP);
+        String budgetString = mBudgetIsSet ?
+                " / $" + mBudget.setScale(2, RoundingMode.HALF_UP) :
+                "";
+        mTotalPriceTextView.setText(priceString + budgetString);
+
+        if (mBudgetIsSet) {
+            if (price.compareTo(mBudget) > 0) {
+                // i.e. if price > mBudget
+                mTotalPriceTextView.setTextColor(
+                        getResources().getColor(R.color.text_color_price_over_budget));
+            } else {
+                mTotalPriceTextView.setTextColor(
+                        getResources().getColor(R.color.text_color_price_normal));
+            }
+        }
     }
 
     /**
@@ -883,6 +921,14 @@ public class MainActivity extends AppCompatActivity
             }
 
             mShoppingListAdapter.onDataChanged();
+
+            // If over budget, warn the user
+            if (mBudgetIsSet && mShoppingListAdapter.getTotalPrice().compareTo(mBudget) > 0) {
+                new MaterialDialog.Builder(MainActivity.this)
+                        .content(R.string.over_budget_warning_message)
+                        .positiveText(R.string.ok)
+                        .show();
+            }
         }
     }
 

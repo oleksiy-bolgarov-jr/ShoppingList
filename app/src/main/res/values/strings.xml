@@ -8,7 +8,9 @@
 
     <!-- Values for main activity -->
     <string name="no_items">You have no items in your shopping list.
-    \nPlease press the + button to add an item.</string>
+    \nPlease add an item by pressing <b>+</b>.</string>
+    <string name="over_budget_warning_message">You are over budget. Please remove unneeded items or
+        replace some items with a cheaper brand.</string>
 
     <!-- Values for main menu -->
     <string name="settings">Settings</string>
@@ -17,6 +19,7 @@
     <string name="done">Done</string>
     <string name="cancel">Cancel</string>
     <string name="confirm">Confirm</string>
+    <string name="ok">OK</string>
 
     <!-- Other general potentially useful values -->
     <string name="price_prefix">$</string>
@@ -73,12 +76,15 @@
     <string name="confirm_restore">Yes, restore</string>
     <string name="cancel_restore">No, cancel</string>
 
-    <!-- Values for settings screen -->
+    <!-- String values for settings screen -->
     <string name="budget">Budget</string>
     <string name="set_maximum_budget">Set maximum budget</string>
-    <string name="maximum_budget">Amount</string>
+    <string name="maximum_budget">Budget</string>
 
     <!-- Keys used in settings -->
     <string name="key_set_maximum_budget_checkbox" translatable="false">set_max_budget</string>
     <string name="key_maximum_budget_edit_text" translatable="false">max_budget</string>
+
+    <!-- Default values used in settings -->
+    <string name="pref_maximum_budget_default" translatable="false">100.00</string>
 </resources>
