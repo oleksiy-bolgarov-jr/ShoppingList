@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="warning_type_labels">
+        <item>@string/warning_fixed_list_entry</item>
+        <item>@string/warning_percentage_list_entry</item>
+    </string-array>
+
+    <integer-array name="warning_type_values">
+        <item>@string/warn_fixed_price_list_value</item>
+        <item>@string/warn_percentage_list_value</item>
+    </integer-array>
+</resources>

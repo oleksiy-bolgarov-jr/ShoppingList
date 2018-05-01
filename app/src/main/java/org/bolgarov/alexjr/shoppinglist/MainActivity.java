@@ -18,6 +18,8 @@ import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -40,8 +42,12 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity
-        implements ShoppingListAdapter.ShoppingListAdapterOnClickHandler {
+public class MainActivity
+        extends
+        AppCompatActivity
+        implements
+        ShoppingListAdapter.ShoppingListAdapterOnClickHandler,
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     public static final String TAG = MainActivity.class.getSimpleName();
 
@@ -54,11 +60,10 @@ public class MainActivity extends AppCompatActivity
      * Add the ability to rearrange items
      * Improve the "delete all" option so you can delete from separate categories
      * Try to prevent user from entering negative values
+     * Add a calculator to conveniently calculate price per kg given price per lb or vice versa, or price per weight/uint given total price and weight/unit
+     * Add promotions (e.g. 3 for $6.00, etc.)
+     * Save states to settings
      */
-
-    private static final String UNCHECKED_KEY = "unchecked";
-    private static final String CHECKED_KEY = "checked";
-    private static final String NOT_BUYING_KEY = "not_buying";
 
     private AppDatabase db;
 
@@ -76,9 +81,16 @@ public class MainActivity extends AppCompatActivity
     // Budget and tax values
     private boolean mBudgetIsSet;
     private BigDecimal mBudget;
+    private boolean mWarningIsSet;
+    private String mWarningType;
+    private BigDecimal mWarningFixedValue;
+    private int mWarningPercentage;
+    private BigDecimal mWarningValue;
+    private boolean mIncludeTax;
+    private BigDecimal mTaxRate;
 
     // Add new item dialog
-    private EditText itemNameEditText;
+    private AutoCompleteTextView itemNameEditText;
     private CheckBox saveItemCheckBox;
     private CheckBox optionalCheckBox;
     private EditText conditionEditText;
@@ -86,8 +98,6 @@ public class MainActivity extends AppCompatActivity
     private View addNewItemNeutralAction;
 
     // On select checked item dialog
-    private View checkedItemPositiveAction;
-    private ShoppingListItem referenceItem;
     private RadioGroup pricingRadioGroup;
     private RadioButton perUnitRadioButton, perKgRadioButton, perLbRadioButton;
     private int whichRadioButtonChecked;
@@ -102,6 +112,7 @@ public class MainActivity extends AppCompatActivity
     private TextView totalItemPriceNoTaxTextView;
     private TextView taxTextView;
     private TextView totalItemPriceTextView;
+    private LinearLayout priceWithoutTaxLinearLayout, taxLinearLayout;
     private View itemPositiveAction;
     private ShoppingListItem currentItem;
     private int currentItemQuantity;
@@ -109,6 +120,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -139,7 +151,8 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        setupBudget();
+        setupSharedPreferences();
+        updateWarning();
 
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
                 "shopping_list_items").build();
@@ -148,17 +161,68 @@ public class MainActivity extends AppCompatActivity
         new RetrieveItemsTask().execute();
     }
 
-    private void setupBudget() {
+    private void setupSharedPreferences() {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+
         mBudgetIsSet = sp.getBoolean(
                 getString(R.string.key_set_maximum_budget_checkbox),
                 getResources().getBoolean(R.bool.pref_set_budget_default)
         );
+
         String budgetString = sp.getString(
                 getString(R.string.key_maximum_budget_edit_text),
                 getResources().getString(R.string.pref_maximum_budget_default)
         );
         mBudget = new BigDecimal(budgetString);
+
+        mWarningIsSet = sp.getBoolean(
+                getString(R.string.key_set_warning_checkbox),
+                getResources().getBoolean(R.bool.pref_set_warning_default)
+        );
+
+        mWarningType = sp.getString(
+                getString(R.string.key_warning_type_list),
+                getString(R.string.warn_fixed_price_list_value)
+        );
+
+        String warningValueString = sp.getString(
+                getString(R.string.key_warning_fixed_edit_text),
+                getString(R.string.pref_warning_fixed_default)
+        );
+        mWarningFixedValue = new BigDecimal(warningValueString);
+
+        mWarningPercentage = sp.getInt(
+                getString(R.string.key_warning_percentage_seek_bar),
+                getResources().getInteger(R.integer.pref_warning_percentage_default)
+        );
+
+        mIncludeTax = sp.getBoolean(
+                getString(R.string.key_include_tax_checkbox),
+                getResources().getBoolean(R.bool.pref_include_tax_default)
+        );
+
+        String taxRateString = sp.getString(
+                getString(R.string.key_tax_rate_edit_text),
+                getResources().getString(R.string.pref_tax_rate_default)
+        );
+        mTaxRate = new BigDecimal(taxRateString).multiply(new BigDecimal("0.01"));
+        if (mIncludeTax) {
+            ShoppingListItem.setTaxRate(mTaxRate);
+        } else {
+            ShoppingListItem.setTaxRate(new BigDecimal("0"));
+        }
+
+        sp.registerOnSharedPreferenceChangeListener(this);
+    }
+
+    private void updateWarning() {
+        if (mWarningType.equals(getString(R.string.warn_fixed_price_list_value))) {
+            mWarningValue = mWarningFixedValue;
+        } else {
+            mWarningValue = mBudget.multiply(
+                    new BigDecimal(mWarningPercentage)
+                            .multiply(new BigDecimal("0.01")));
+        }
     }
 
     @Override
@@ -279,7 +343,7 @@ public class MainActivity extends AppCompatActivity
                 )
                 .build();
 
-        itemNameEditText = (EditText) materialDialog.getCustomView()
+        itemNameEditText = (AutoCompleteTextView) materialDialog.getCustomView()
                 .findViewById(R.id.item_name_edit_text);
         saveItemCheckBox = (CheckBox) materialDialog.getCustomView()
                 .findViewById(R.id.save_item_check_box);
@@ -287,6 +351,15 @@ public class MainActivity extends AppCompatActivity
                 .findViewById(R.id.make_item_optional_check_box);
         conditionEditText = (EditText) materialDialog.getCustomView()
                 .findViewById(R.id.condition_edit_text);
+
+        // TODO: This just populates the autocomplete list with dummy data. Make it use correct data.
+        String[] dummyAutocompleteData = {"Fuck", "Shit", "Piss", "Cunt", "Fart", "Rumpelstiltskin",
+                "Fuck you and your mother", "Fuck you and your grandmother",
+                "Fuck you and your sister", "Bitch"};
+        ArrayAdapter<String> adapter =
+                new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line,
+                        dummyAutocompleteData);
+        itemNameEditText.setAdapter(adapter);
 
         addNewItemPositiveAction = materialDialog.getActionButton(DialogAction.POSITIVE);
         addNewItemNeutralAction = materialDialog.getActionButton(DialogAction.NEUTRAL);
@@ -385,6 +458,13 @@ public class MainActivity extends AppCompatActivity
         totalItemPriceNoTaxTextView = view.findViewById(R.id.total_item_price_no_tax_text_view);
         taxTextView = view.findViewById(R.id.tax_text_view);
         totalItemPriceTextView = view.findViewById(R.id.total_item_price_text_view);
+        priceWithoutTaxLinearLayout = view.findViewById(R.id.total_price_no_tax_linear_layout);
+        taxLinearLayout = view.findViewById(R.id.tax_linear_layout);
+
+        if (!mIncludeTax) {
+            priceWithoutTaxLinearLayout.setVisibility(View.GONE);
+            taxLinearLayout.setVisibility(View.GONE);
+        }
 
         itemPositiveAction.setEnabled(false);  // User needs to add the proper values first
 
@@ -585,7 +665,7 @@ public class MainActivity extends AppCompatActivity
                 .customView(R.layout.buying_item_dialog, true)
                 .positiveText(R.string.save_changes)
                 .neutralText(R.string.move_to_top)
-                .negativeText(R.string.do_not_save)
+                .negativeText(R.string.cancel)
                 .onPositive(new CheckedItemClickPositiveActionCallback())
                 .onNeutral(new CheckedItemClickNeutralActionCallback())
                 .build();
@@ -610,6 +690,13 @@ public class MainActivity extends AppCompatActivity
         totalItemPriceNoTaxTextView = view.findViewById(R.id.total_item_price_no_tax_text_view);
         taxTextView = view.findViewById(R.id.tax_text_view);
         totalItemPriceTextView = view.findViewById(R.id.total_item_price_text_view);
+        priceWithoutTaxLinearLayout = view.findViewById(R.id.total_price_no_tax_linear_layout);
+        taxLinearLayout = view.findViewById(R.id.tax_linear_layout);
+
+        if (!mIncludeTax) {
+            priceWithoutTaxLinearLayout.setVisibility(View.GONE);
+            taxLinearLayout.setVisibility(View.GONE);
+        }
 
         if (item.isPerUnitOrPerWeight() == ShoppingListItem.PER_UNIT) {
             perKgRadioButton.setEnabled(false);
@@ -824,6 +911,9 @@ public class MainActivity extends AppCompatActivity
                 // i.e. if price > mBudget
                 mTotalPriceTextView.setTextColor(
                         getResources().getColor(R.color.text_color_price_over_budget));
+            } else if (mWarningIsSet && price.compareTo(mWarningValue) > 0) {
+                mTotalPriceTextView.setTextColor(
+                        getResources().getColor(R.color.text_color_price_warning));
             } else {
                 mTotalPriceTextView.setTextColor(
                         getResources().getColor(R.color.text_color_price_normal));
@@ -840,6 +930,50 @@ public class MainActivity extends AppCompatActivity
 
     private void showToastMessage(String s) {
         Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(getString(R.string.key_set_maximum_budget_checkbox))) {
+            mBudgetIsSet = sharedPreferences.getBoolean(key,
+                    getResources().getBoolean(R.bool.pref_set_budget_default));
+        } else if (key.equals(getString(R.string.key_maximum_budget_edit_text))) {
+            mBudget = new BigDecimal(sharedPreferences.getString(key,
+                    getResources().getString(R.string.pref_maximum_budget_default)));
+        } else if (key.equals(getString(R.string.key_set_warning_checkbox))) {
+            mWarningIsSet = sharedPreferences.getBoolean(key,
+                    getResources().getBoolean(R.bool.pref_set_warning_default));
+        } else if (key.equals(getString(R.string.key_warning_type_list))) {
+            mWarningType = sharedPreferences.getString(key,
+                    getResources().getString(R.string.warn_fixed_price_list_value));
+        } else if (key.equals(getString(R.string.key_warning_fixed_edit_text))) {
+            mWarningFixedValue =
+                    new BigDecimal(sharedPreferences.getString(key,
+                            getResources().getString(R.string.pref_warning_fixed_default)));
+        } else if (key.equals(getString(R.string.key_warning_percentage_seek_bar))) {
+            mWarningPercentage = sharedPreferences.getInt(key,
+                    getResources().getInteger(R.integer.pref_warning_percentage_default));
+        } else if (key.equals(getString(R.string.key_include_tax_checkbox))) {
+            mIncludeTax = sharedPreferences.getBoolean(key,
+                    getResources().getBoolean(R.bool.pref_include_tax_default));
+            if (mIncludeTax) {
+                ShoppingListItem.setTaxRate(mTaxRate);
+            } else {
+                ShoppingListItem.setTaxRate(new BigDecimal("0"));
+            }
+        } else if (key.equals(getString(R.string.key_tax_rate_edit_text))) {
+            mTaxRate = new BigDecimal(sharedPreferences.getString(key,
+                    getResources().getString(R.string.pref_tax_rate_default)))
+                    .multiply(new BigDecimal("0.01"));
+            if (mIncludeTax) {
+                ShoppingListItem.setTaxRate(mTaxRate);
+            } else {
+                ShoppingListItem.setTaxRate(new BigDecimal("0"));
+            }
+        }
+
+        updateWarning();
+        updateTotalPrice(mShoppingListAdapter.getTotalPrice());
     }
 
     public class RetrieveItemsTask extends AsyncTask<Void, Void, List<ShoppingListItem>> {

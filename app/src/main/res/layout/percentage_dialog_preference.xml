@@ -10,18 +10,18 @@
     android:paddingStart="?dialogPreferredPadding"
     android:paddingTop="18dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/price_prefix"
-        android:textColor="@color/text_color_dialog_item_value"
-        android:textSize="@dimen/dialog_item_value" />
-
     <EditText
         android:id="@+id/edit"
         android:layout_width="0dp"
-        android:layout_weight="1"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:inputType="numberDecimal" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/percent_suffix"
+        android:textColor="@color/text_color_dialog_item_value"
+        android:textSize="@dimen/dialog_item_value" />
 
 </LinearLayout>

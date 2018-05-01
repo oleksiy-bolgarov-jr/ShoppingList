@@ -8,12 +8,11 @@ import android.widget.EditText;
 
 import org.bolgarov.alexjr.shoppinglist.R;
 
-public class MoneyPreferenceDialogFragment extends PreferenceDialogFragmentCompat {
-
+public class PercentPreferenceDialogFragment extends PreferenceDialogFragmentCompat {
     private EditText mEditText;
 
-    public static MoneyPreferenceDialogFragment newInstance(String key) {
-        final MoneyPreferenceDialogFragment fragment = new MoneyPreferenceDialogFragment();
+    public static PercentPreferenceDialogFragment newInstance(String key) {
+        final PercentPreferenceDialogFragment fragment = new PercentPreferenceDialogFragment();
         final Bundle b = new Bundle(1);
         b.putString(ARG_KEY, key);
         fragment.setArguments(b);
@@ -27,30 +26,29 @@ public class MoneyPreferenceDialogFragment extends PreferenceDialogFragmentCompa
 
         mEditText = view.findViewById(R.id.edit);
         if (mEditText == null) {
-            // FIXME: Is this part actually necessary?
             throw new IllegalStateException("View must contain an EditText with ID 'edit'");
         }
 
         DialogPreference preference = getPreference();
-        String moneyString = null;
-        if (preference instanceof MoneyPreference) {
-            moneyString = ((MoneyPreference) preference).getMoney();
+        String percentString = null;
+        if (preference instanceof PercentPreference) {
+            percentString = ((PercentPreference) preference).getPercentage();
         }
 
-        if (moneyString != null) {
-            mEditText.setText(moneyString);
+        if (percentString != null) {
+            mEditText.setText(percentString);
         }
     }
 
     @Override
     public void onDialogClosed(boolean positiveResult) {
         if (positiveResult) {
-            String money = mEditText.getText().toString();
+            String percentage = mEditText.getText().toString();
             DialogPreference preference = getPreference();
-            if (preference instanceof MoneyPreference) {
-                MoneyPreference moneyPreference = (MoneyPreference) preference;
-                if (moneyPreference.callChangeListener(money)) {
-                    moneyPreference.setMoney(money);
+            if (preference instanceof PercentPreference) {
+                PercentPreference percentPreference = (PercentPreference) preference;
+                if (percentPreference.callChangeListener(percentage)) {
+                    percentPreference.setPercentage(percentage);
                 }
             }
         }

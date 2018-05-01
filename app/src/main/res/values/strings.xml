@@ -23,6 +23,7 @@
 
     <!-- Other general potentially useful values -->
     <string name="price_prefix">$</string>
+    <string name="percent_suffix">%</string>
 
     <!-- Values for add item dialog -->
     <string name="add_item_title">Add new item to shopping list</string>
@@ -64,9 +65,9 @@
     <string name="kg">kg</string>
     <string name="lb">lb</string>
     <string name="oz">oz</string>
-    <string name="total_price_no_tax_title">Total price without tax</string>
+    <string name="total_price_no_tax_title">Price before tax</string>
     <string name="tax_title">Tax</string>
-    <string name="total_price_title">Total price including tax</string>
+    <string name="total_price_title">Total price</string>
     <string name="not_buying">I am not buying this</string>
     <string name="move_to_top">Reset</string>
     <string name="save_changes">Save changes</string>
@@ -79,12 +80,36 @@
     <!-- String values for settings screen -->
     <string name="budget">Budget</string>
     <string name="set_maximum_budget">Set maximum budget</string>
+    <string name="budget_settings">Budget settings&#8230;</string>
     <string name="maximum_budget">Budget</string>
+    <string name="budget_warning">Warning</string>
+    <string name="set_warning">Set warning</string>
+    <string name="warning_type">Type</string>
+    <string name="warning_fixed_list_entry">Fixed amount</string>
+    <string name="warning_percentage_list_entry">Percentage of budget</string>
+    <string name="warn_fixed_price_list_value" translatable="false">fixed_amount_val</string>
+    <string name="warn_percentage_list_value" translatable="false">percentage_val</string>
+    <string name="warning_fixed">Amount</string>
+    <string name="warning_percentage">Percentage</string>
+    <string name="tax">Tax</string>
+    <string name="include_tax">Include tax</string>
+    <string name="tax_rate">Tax rate</string>
 
     <!-- Keys used in settings -->
+    <string name="key_root" translatable="false">root_preference_screen</string>
+    <string name="key_budget_subscreen" translatable="false">budget_subscreen</string>
     <string name="key_set_maximum_budget_checkbox" translatable="false">set_max_budget</string>
     <string name="key_maximum_budget_edit_text" translatable="false">max_budget</string>
+    <string name="key_set_warning_checkbox" translatable="false">set_warning</string>
+    <string name="key_warning_type_list" translatable="false">warning_type</string>
+    <string name="key_warning_fixed_edit_text" translatable="false">warning_fixed</string>
+    <string name="key_warning_percentage_seek_bar" translatable="false">warning_percentage</string>
+    <string name="key_include_tax_checkbox" translatable="false">include_tax</string>
+    <string name="key_tax_rate_edit_text" translatable="false">tax_rate</string>
 
     <!-- Default values used in settings -->
     <string name="pref_maximum_budget_default" translatable="false">100.00</string>
+    <string name="pref_warning_fixed_default" translatable="false">80.00</string>
+    <string name="pref_warning_percentage_default" translatable="false">80</string> <!-- TODO: Remove -->
+    <string name="pref_tax_rate_default" translatable="false">13</string>
 </resources>
