@@ -1,6 +1,5 @@
 package org.bolgarov.alexjr.shoppinglist;
 
-import android.arch.persistence.room.Room;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
@@ -33,6 +32,8 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
+import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntry;
+import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntryDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemDatabaseEntity;
@@ -53,16 +54,14 @@ public class MainActivity
 
     /*
      * TODO: Next steps:
-     * Implement settings
-     * Add an autocomplete dictionary
-     * Display more information on the items
-     * Implement optional and condition
-     * Add the ability to rearrange items
+     * Polish up the optional and condition bits, also improving code
      * Improve the "delete all" option so you can delete from separate categories
      * Try to prevent user from entering negative values
      * Add a calculator to conveniently calculate price per kg given price per lb or vice versa, or price per weight/uint given total price and weight/unit
      * Add promotions (e.g. 3 for $6.00, etc.)
+     * Add categories (after Github)
      * Save states to settings
+     * OPTIONAL: Use CardViews as list items
      */
 
     private AppDatabase db;
@@ -76,7 +75,11 @@ public class MainActivity
     private FloatingActionButton mAddItemButton;
 
     private LinearLayout mFooter;
+    private LinearLayout mFootnotes;
     private TextView mTotalPriceTextView;
+    private TextView mOverBudgetTextView;
+    private TextView mOptionalTextView;
+    private TextView mConditionTextView;
 
     // Budget and tax values
     private boolean mBudgetIsSet;
@@ -88,6 +91,10 @@ public class MainActivity
     private BigDecimal mWarningValue;
     private boolean mIncludeTax;
     private BigDecimal mTaxRate;
+
+    // Autocomplete values
+    private boolean mAutocompleteEnabled;
+    private String[] mAutocompleteDictionary;
 
     // Add new item dialog
     private AutoCompleteTextView itemNameEditText;
@@ -118,6 +125,8 @@ public class MainActivity
     private int currentItemQuantity;
     private boolean weightWasChanged = false;
 
+    private TextView conditionTextView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -137,28 +146,27 @@ public class MainActivity
 
         mRecyclerView.setAdapter(mShoppingListAdapter);
 
-        mFooter = (LinearLayout) findViewById(R.id.footer);
+        mFooter = (LinearLayout) findViewById(R.id.anal_sauce);
+        mFootnotes = findViewById(R.id.footnotes);
         mTotalPriceTextView = (TextView) findViewById(R.id.total_price_text_view);
+        mOverBudgetTextView = (TextView) findViewById(R.id.tv_over_budget_footer);
+        mOptionalTextView = findViewById(R.id.tv_optional_footnote);
+        mConditionTextView = findViewById(R.id.tv_condition_footnote);
 
         mErrorDisplay = (ConstraintLayout) findViewById(R.id.no_items_display);
         mLoadingIndicator = (ConstraintLayout) findViewById(R.id.loading_display);
 
         mAddItemButton = findViewById(R.id.add_item_fab);
-        mAddItemButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showAddNewItemDialog();
-            }
-        });
+        mAddItemButton.setOnClickListener(v -> showAddNewItemDialog());
 
         setupSharedPreferences();
         updateWarning();
 
-        db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
-                "shopping_list_items").build();
+        db = AppDatabase.getDatabaseInstance(this);
         switchViews(mShoppingListAdapter.getItemCount() == 0);
 
         new RetrieveItemsTask().execute();
+        setupAutocompleteDictionary();
     }
 
     private void setupSharedPreferences() {
@@ -212,7 +220,29 @@ public class MainActivity
             ShoppingListItem.setTaxRate(new BigDecimal("0"));
         }
 
+        mAutocompleteEnabled = sp.getBoolean(
+                getString(R.string.key_enable_autocomplete_checkbox),
+                getResources().getBoolean(R.bool.pref_enable_autocomplete_default)
+        );
+
         sp.registerOnSharedPreferenceChangeListener(this);
+    }
+
+    private void setupAutocompleteDictionary() {
+        new AsyncTask<Void, Void, String[]>() {
+
+            @Override
+            protected String[] doInBackground(Void... voids) {
+                AutocompleteEntryDao dao = db.autocompleteEntryDao();
+                return dao.getAllEntries().toArray(new String[0]);
+            }
+
+            @Override
+            protected void onPostExecute(String[] autocompleteDictionary) {
+                super.onPostExecute(autocompleteDictionary);
+                mAutocompleteDictionary = autocompleteDictionary;
+            }
+        }.execute();
     }
 
     private void updateWarning() {
@@ -248,11 +278,7 @@ public class MainActivity
                         .content(R.string.prompt_delete_all)
                         .positiveText(R.string.confirm_delete_all)
                         .negativeText(R.string.cancel_delete_all)
-                        .onPositive((dialog, which) -> {
-                            mShoppingListAdapter.deleteAll();
-                            showToastMessage(
-                                    "All entries have been deleted from the shopping list.");
-                        })
+                        .onPositive((dialog, which) -> mShoppingListAdapter.deleteAll())
                         .show();
                 return true;
             case R.id.settings:
@@ -352,13 +378,12 @@ public class MainActivity
         conditionEditText = (EditText) materialDialog.getCustomView()
                 .findViewById(R.id.condition_edit_text);
 
-        // TODO: This just populates the autocomplete list with dummy data. Make it use correct data.
-        String[] dummyAutocompleteData = {"Fuck", "Shit", "Piss", "Cunt", "Fart", "Rumpelstiltskin",
-                "Fuck you and your mother", "Fuck you and your grandmother",
-                "Fuck you and your sister", "Bitch"};
         ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line,
-                        dummyAutocompleteData);
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_dropdown_item_1line,
+                        mAutocompleteEnabled ? mAutocompleteDictionary : new String[0]
+                );
         itemNameEditText.setAdapter(adapter);
 
         addNewItemPositiveAction = materialDialog.getActionButton(DialogAction.POSITIVE);
@@ -396,8 +421,22 @@ public class MainActivity
         );
         mShoppingListAdapter.addItemToEndOfShoppingList(itemToAdd);
         if (save) {
-            showToastMessage("Saving has not been implemented yet.");
-            // TODO Save this to the predictive text list
+            new AsyncTask<String, Void, Void>() {
+                @Override
+                protected Void doInBackground(String... strings) {
+                    AutocompleteEntryDao dao = db.autocompleteEntryDao();
+                    AutocompleteEntry entry = new AutocompleteEntry();
+                    entry.setName(strings[0]);
+                    dao.insertAll(entry);
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Void nothing) {
+                    super.onPostExecute(nothing);
+                    setupAutocompleteDictionary();
+                }
+            }.execute(itemName);
         }
     }
 
@@ -417,7 +456,11 @@ public class MainActivity
         List<ShoppingListItem> allItems = mShoppingListAdapter.getAllItemsOrderedByStatus();
         ShoppingListItem item = allItems.get(index);
         if (item.getStatus() == ShoppingListItem.UNCHECKED) {
-            onUncheckedItemClick(item);
+            if (item.hasCondition()) {
+                onConditionedItemClick(item);
+            } else {
+                onUncheckedItemClick(item);
+            }
         } else if (item.getStatus() == ShoppingListItem.CHECKED) {
             onCheckedItemClick(item);
         } else {
@@ -425,10 +468,35 @@ public class MainActivity
         }
     }
 
+    /**
+     * Precondition: item.hasCondition() must be true
+     *
+     * @param item The shopping list item, with a non-null, nonempty comdition
+     */
+    private void onConditionedItemClick(ShoppingListItem item) {
+        if (!item.hasCondition()) {
+            throw new IllegalArgumentException(
+                    "Item must have a non-null, nonempty condition specified.");
+        }
+        MaterialDialog dialog = new MaterialDialog.Builder(this)
+                .title(item.getItemName())
+                .customView(R.layout.dialog_conditioned_item, true)
+                .positiveText(R.string.yes)
+                .negativeText(R.string.no)
+                .neutralText(R.string.not_buying)
+                .onPositive((d, which) -> onUncheckedItemClick(item))
+                .onNeutral(new UncheckedItemClickNeutralActionCallback())
+                .build();
+        View view = dialog.getCustomView();
+        conditionTextView = view.findViewById(R.id.tv_item_condition);
+        conditionTextView.setText(item.getCondition());
+        dialog.show();
+    }
+
     private void onUncheckedItemClick(ShoppingListItem item) {
         currentItem = item;
         currentItemQuantity = 0;
-        MaterialDialog materialDialog = new MaterialDialog.Builder(this)
+        MaterialDialog itemBuyingDialog = new MaterialDialog.Builder(this)
                 .title(item.getItemName())
                 .customView(R.layout.buying_item_dialog, true)
                 .positiveText(R.string.confirm)
@@ -437,8 +505,8 @@ public class MainActivity
                 .onPositive(new UncheckedItemClickPositiveActionCallback())
                 .onNeutral(new UncheckedItemClickNeutralActionCallback())
                 .build();
-        View view = materialDialog.getCustomView();
-        itemPositiveAction = materialDialog.getActionButton(DialogAction.POSITIVE);
+        View view = itemBuyingDialog.getCustomView();
+        itemPositiveAction = itemBuyingDialog.getActionButton(DialogAction.POSITIVE);
 
         pricingRadioGroup = view.findViewById(R.id.pricing_radio_group);
         perUnitRadioButton = view.findViewById(R.id.per_unit);
@@ -521,7 +589,7 @@ public class MainActivity
         perLbUncheckedSetup();
         updateDialog();
 
-        materialDialog.show();
+        itemBuyingDialog.show();
     }
 
     private void updateDialog() {
@@ -905,12 +973,14 @@ public class MainActivity
                 " / $" + mBudget.setScale(2, RoundingMode.HALF_UP) :
                 "";
         mTotalPriceTextView.setText(priceString + budgetString);
+        mOverBudgetTextView.setVisibility(View.GONE);
 
         if (mBudgetIsSet) {
             if (price.compareTo(mBudget) > 0) {
                 // i.e. if price > mBudget
                 mTotalPriceTextView.setTextColor(
                         getResources().getColor(R.color.text_color_price_over_budget));
+                mOverBudgetTextView.setVisibility(View.VISIBLE);
             } else if (mWarningIsSet && price.compareTo(mWarningValue) > 0) {
                 mTotalPriceTextView.setTextColor(
                         getResources().getColor(R.color.text_color_price_warning));
@@ -919,13 +989,6 @@ public class MainActivity
                         getResources().getColor(R.color.text_color_price_normal));
             }
         }
-    }
-
-    /**
-     * This method is for testing purposes only. Use it to demonstrate that something works.
-     */
-    private void genericAction() {
-        Toast.makeText(this, "This has not been implemented yet", Toast.LENGTH_SHORT).show();
     }
 
     private void showToastMessage(String s) {
@@ -970,10 +1033,27 @@ public class MainActivity
             } else {
                 ShoppingListItem.setTaxRate(new BigDecimal("0"));
             }
+        } else if (key.equals(getString(R.string.key_enable_autocomplete_checkbox))) {
+            mAutocompleteEnabled = sharedPreferences.getBoolean(key,
+                    getResources().getBoolean(R.bool.pref_enable_autocomplete_default));
         }
 
         updateWarning();
         updateTotalPrice(mShoppingListAdapter.getTotalPrice());
+    }
+
+    public boolean isTaxIncluded() {
+        return mIncludeTax;
+    }
+
+    public void showFootnotes(boolean optionalItemsExist, boolean conditionedItemsExist) {
+        if (optionalItemsExist || conditionedItemsExist) {
+            mFootnotes.setVisibility(View.VISIBLE);
+            mOptionalTextView.setVisibility(optionalItemsExist ? View.VISIBLE : View.GONE);
+            mConditionTextView.setVisibility(conditionedItemsExist ? View.VISIBLE : View.GONE);
+        } else {
+            mFootnotes.setVisibility(View.GONE);
+        }
     }
 
     public class RetrieveItemsTask extends AsyncTask<Void, Void, List<ShoppingListItem>> {
@@ -988,7 +1068,7 @@ public class MainActivity
 
         @Override
         protected List<ShoppingListItem> doInBackground(Void... voids) {
-            ShoppingListItemDao dao = db.dao();
+            ShoppingListItemDao dao = db.shoppingListItemDao();
             List<ShoppingListItemDatabaseEntity> entities = dao.getAllItems();
             List<ShoppingListItem> items = new ArrayList<>();
             for (ShoppingListItemDatabaseEntity entity : entities) {
@@ -1009,7 +1089,7 @@ public class MainActivity
     public class StoreItemsTask extends AsyncTask<ShoppingListItem, Void, Void> {
         @Override
         protected Void doInBackground(ShoppingListItem... shoppingListItems) {
-            ShoppingListItemDao dao = db.dao();
+            ShoppingListItemDao dao = db.shoppingListItemDao();
             ShoppingListItemDatabaseEntity[] entities =
                     new ShoppingListItemDatabaseEntity[shoppingListItems.length];
             for (int i = 0; i < entities.length; i++) {

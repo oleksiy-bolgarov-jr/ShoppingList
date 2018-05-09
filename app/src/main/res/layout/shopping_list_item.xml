@@ -7,21 +7,32 @@
 
     <TextView
         android:id="@+id/tv_shopping_list_item"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:padding="16dp" />
+        android:padding="16dp"
+        android:textColor="@color/text_color_dialog_item_value"
+        android:textSize="@dimen/dialog_item_value" />
+
+    <TextView
+        android:id="@+id/tv_item_price_calculations"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
     <TextView
         android:id="@+id/tv_item_price"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp" />
+        android:paddingBottom="16dp"
+        android:paddingTop="16dp"
+        android:textColor="@color/text_color_dialog_item_value"
+        android:textSize="@dimen/dialog_item_value" />
 
     <ImageButton
         android:id="@+id/ib_shopping_list_item_options"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:layout_gravity="center"
         android:background="?android:attr/selectableItemBackground"
         android:src="@drawable/ic_more_vert_black_24dp" />
 

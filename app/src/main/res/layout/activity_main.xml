@@ -23,7 +23,9 @@
             android:id="@+id/recycler_view_shopping_list"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="40dp" />
 
         <android.support.constraint.ConstraintLayout
             android:id="@+id/no_items_display"
@@ -64,21 +66,67 @@
             app:cardElevation="8dp">
 
             <LinearLayout
-                android:id="@+id/footer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:orientation="horizontal"
-                android:padding="8dp"
-                app:layout_constraintBottom_toBottomOf="parent">
+                android:orientation="vertical"
+                android:paddingBottom="8dp"
+                android:paddingTop="8dp">
 
-                <TextView
-                    android:id="@+id/total_price_text_view"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/anal_sauce"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/price"
-                    android:textColor="@color/text_color_price_normal"
-                    android:textSize="@dimen/dialog_item_value" />
+                    android:layout_gravity="bottom"
+                    android:orientation="horizontal"
+                    android:paddingEnd="86dp"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="86dp"
+                    android:paddingStart="8dp"
+                    app:layout_constraintBottom_toBottomOf="parent"> <!-- TODO: Remove the constraint attribute, it is useless -->
+
+                    <TextView
+                        android:id="@+id/total_price_text_view"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/price"
+                        android:textColor="@color/text_color_price_normal"
+                        android:textSize="@dimen/dialog_item_value" />
+
+                    <TextView
+                        android:id="@+id/tv_over_budget_footer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/over_budget_footer"
+                        android:textColor="@color/text_color_price_over_budget"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/footnotes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tv_optional_footnote"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/asterisk_footmote"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tv_condition_footnote"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/dagger_footnote"
+                        android:visibility="gone" />
+
+                </LinearLayout>
 
             </LinearLayout>
 

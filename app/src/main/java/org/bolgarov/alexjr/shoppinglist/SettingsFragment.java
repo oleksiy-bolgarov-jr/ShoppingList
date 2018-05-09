@@ -1,5 +1,6 @@
 package org.bolgarov.alexjr.shoppinglist;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
@@ -56,56 +57,61 @@ public class SettingsFragment
     }
 
     private void setupPreference(SharedPreferences sp, Preference p) {
-        if (p == null) {    // Base case 1, should never happen but just in case
-            // Do nothing
-        } else if (!(p instanceof PreferenceGroup)) {   // Base case 2
-            if (p instanceof CheckBoxPreference) {
-                // Enable and disable preferences and preference groups based on the corresponding
-                // checkboxes
-                String key = p.getKey();
-                if (key.equals(getString(R.string.key_set_maximum_budget_checkbox))) {
-                    findPreference(getString(R.string.key_budget_subscreen))
-                            .setEnabled(((CheckBoxPreference) p).isChecked());
-                } else if (key.equals(getString(R.string.key_include_tax_checkbox))) {
-                    findPreference(getString(R.string.key_tax_rate_edit_text))
-                            .setEnabled(((CheckBoxPreference) p).isChecked());
-                }
-            } else if (p instanceof MoneyPreference) {
-                String value = sp.getString(p.getKey(), "");
-                p.setSummary("$" + value);
-            } else if (p instanceof ListPreference) {
-                String key = p.getKey();
-                ListPreference lp = (ListPreference) p;
-                // For all ListPreferences, set the summary
-                String value = sp.getString(key, "");
-                int index = lp.findIndexOfValue(value);
-                if (index >= 0) {
-                    lp.setSummary(lp.getEntries()[index]);
-                }
-                // Actions specific to each ListPreference
-                if (key.equals(getString(R.string.key_warning_type_list))) {
-                    Preference fixedPriceWarn =
-                            findPreference(getString(R.string.key_warning_fixed_edit_text));
-                    Preference percentageWarn =
-                            findPreference(getString(R.string.key_warning_percentage_seek_bar));
-                    if (value.equals(getString(R.string.warn_fixed_price_list_value))) {
-                        fixedPriceWarn.setVisible(true);
-                        percentageWarn.setVisible(false);
-                    } else {
-                        fixedPriceWarn.setVisible(false);
-                        percentageWarn.setVisible(true);
+        if (p != null) {
+            if (!(p instanceof PreferenceGroup)) { // Base case 1
+                if (p instanceof CheckBoxPreference) {
+                    // Enable and disable preferences and preference groups based on the
+                    // corresponding checkboxes
+                    String key = p.getKey();
+                    if (key.equals(getString(R.string.key_set_maximum_budget_checkbox))) {
+                        findPreference(getString(R.string.key_budget_subscreen))
+                                .setEnabled(((CheckBoxPreference) p).isChecked());
+                    } else if (key.equals(getString(R.string.key_include_tax_checkbox))) {
+                        findPreference(getString(R.string.key_tax_rate_edit_text))
+                                .setEnabled(((CheckBoxPreference) p).isChecked());
                     }
+                } else if (p instanceof MoneyPreference) {
+                    String value = sp.getString(p.getKey(), "");
+                    p.setSummary("$" + value);
+                } else if (p instanceof ListPreference) {
+                    String key = p.getKey();
+                    ListPreference lp = (ListPreference) p;
+                    // For all ListPreferences, set the summary
+                    String value = sp.getString(key, "");
+                    int index = lp.findIndexOfValue(value);
+                    if (index >= 0) {
+                        lp.setSummary(lp.getEntries()[index]);
+                    }
+                    // Actions specific to each ListPreference
+                    if (key.equals(getString(R.string.key_warning_type_list))) {
+                        Preference fixedPriceWarn =
+                                findPreference(getString(R.string.key_warning_fixed_edit_text));
+                        Preference percentageWarn =
+                                findPreference(getString(R.string.key_warning_percentage_seek_bar));
+                        if (value.equals(getString(R.string.warn_fixed_price_list_value))) {
+                            fixedPriceWarn.setVisible(true);
+                            percentageWarn.setVisible(false);
+                        } else {
+                            fixedPriceWarn.setVisible(false);
+                            percentageWarn.setVisible(true);
+                        }
+                    }
+                } else if (p instanceof PercentPreference) {
+                    String value = sp.getString(p.getKey(), "");
+                    p.setSummary(value + "%");
                 }
-            } else if (p instanceof PercentPreference) {
-                String value = sp.getString(p.getKey(), "");
-                p.setSummary(value + "%");
-            }
-        } else {    // Recursive case
-            PreferenceGroup group = (PreferenceGroup) p;
-            int count = group.getPreferenceCount();
-            for (int i = 0; i < count; i++) {
-                Preference child = group.getPreference(i);
-                setupPreference(sp, child);
+            } else if (p.getKey() != null &&
+                    p.getKey().equals(getString(R.string.key_autocomplete_dictionary_intent))) {
+                // Base case 2, where the preference is the autocomplete dictionary preference
+                Intent intent = new Intent(getContext(), AutocompleteDictionaryActivity.class);
+                p.setIntent(intent);
+            } else {    // Recursive case
+                PreferenceGroup group = (PreferenceGroup) p;
+                int count = group.getPreferenceCount();
+                for (int i = 0; i < count; i++) {
+                    Preference child = group.getPreference(i);
+                    setupPreference(sp, child);
+                }
             }
         }
     }

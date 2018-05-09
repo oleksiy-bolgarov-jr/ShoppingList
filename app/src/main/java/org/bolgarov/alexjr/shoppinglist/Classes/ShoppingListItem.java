@@ -248,7 +248,7 @@ public class ShoppingListItem {
     }
 
     public boolean hasCondition() {
-        return condition != null;
+        return condition != null && !condition.equals("");
     }
 
     /**

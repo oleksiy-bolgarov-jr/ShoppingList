@@ -25,6 +25,10 @@ import java.util.List;
 
 public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapter.SLAViewHolder> {
 
+    // TODO: Remove these when refactoring warnings
+    public static final String DAGGER = "†";
+    public static final String TIMES = "×";
+
     private static final int CHECKED_ITEM_BACKGROUND_COLOR = 0x40000000;
     private static final int NOT_BUYING_ITEM_BACKGROUND_COLOR = 0x40F44336;
     private static final int NOT_BUYING_ITEM_TEXT_COLOR = 0xFFF44336;
@@ -52,28 +56,73 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
     public void onBindViewHolder(SLAViewHolder holder, int position) {
         List<ShoppingListItem> allItems = getAllItemsOrderedByStatus();
         ShoppingListItem currentShoppingListItem = allItems.get(position);
-        holder.mItemNameTextView.setText(currentShoppingListItem.getItemName());
-        holder.mPriceTextView.setText(
-                "$" + currentShoppingListItem.getTotalPrice().setScale(2, RoundingMode.HALF_UP));
+        String itemName = currentShoppingListItem.getItemName();
+        if (currentShoppingListItem.isOptional()) {
+            itemName += "*";
+        }
+        if (currentShoppingListItem.hasCondition()) {
+            itemName += DAGGER;
+        }
+        holder.mItemNameTextView.setText(itemName);
 
         if (currentShoppingListItem.getStatus() == ShoppingListItem.CHECKED) {
             holder.mContainingLinearLayout.setBackgroundColor(CHECKED_ITEM_BACKGROUND_COLOR);
             holder.mItemNameTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
             holder.mPriceTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
             setStrikeThrough(holder.mItemNameTextView, false);
-            setStrikeThrough(holder.mPriceTextView, false);
+
+            if (currentShoppingListItem.isPerUnitOrPerWeight() == ShoppingListItem.PER_UNIT) {
+                // TODO: Use string resources instead
+                // FIXME: Find a better way to strip trailing zeros
+                holder.mPriceCalculationTextView.setText(
+                        "$" + currentShoppingListItem
+                                .getPricePerUnit()
+                                .setScale(2, RoundingMode.HALF_UP)
+                                + " × " + currentShoppingListItem.getQuantity()
+                                + (mClickHandler.isTaxIncluded()
+                                ? " + $" +
+                                ShoppingListItem.getTax(
+                                        currentShoppingListItem.getTotalPriceWithoutTax())
+                                        .setScale(2, RoundingMode.HALF_UP)
+                                + " tax"
+                                : "")   // FIXME: Bad practice (I've seen better practice from a gorilla)
+                                + " = "
+                );
+            } else {
+                // TODO: See above
+                holder.mPriceCalculationTextView.setText(
+                        "$" + currentShoppingListItem.getPricePerUnit().setScale(2, RoundingMode.HALF_UP)
+                                + " × "
+                                + currentShoppingListItem.getWeightInKilograms().setScale(3, RoundingMode.HALF_UP).stripTrailingZeros()
+                                + "kg + "
+                                + (mClickHandler.isTaxIncluded()
+                                ? " + $" +
+                                ShoppingListItem.getTax(
+                                        currentShoppingListItem.getTotalPriceWithoutTax())
+                                        .setScale(2, RoundingMode.HALF_UP)
+                                + " tax"
+                                : "")   // FIXME: Bad practice (I've seen better practice from a gorilla)
+                                + " = "
+                );
+            }
+
+            holder.mPriceTextView.setText(
+                    "$" + currentShoppingListItem.getTotalPrice().setScale(2, RoundingMode.HALF_UP)
+            );
         } else if (currentShoppingListItem.getStatus() == ShoppingListItem.NOT_BUYING) {
             holder.mContainingLinearLayout.setBackgroundColor(NOT_BUYING_ITEM_BACKGROUND_COLOR);
             holder.mItemNameTextView.setTextColor(NOT_BUYING_ITEM_TEXT_COLOR);
             holder.mPriceTextView.setTextColor(NOT_BUYING_ITEM_TEXT_COLOR);
             setStrikeThrough(holder.mItemNameTextView, true);
-            setStrikeThrough(holder.mPriceTextView, true);
+            holder.mPriceCalculationTextView.setText("");
+            holder.mPriceTextView.setText("");
         } else {
             holder.mContainingLinearLayout.setBackground(holder.DEFAULT_BACKGROUND);
             holder.mItemNameTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
             holder.mPriceTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
             setStrikeThrough(holder.mItemNameTextView, false);
-            setStrikeThrough(holder.mItemNameTextView, false);
+            holder.mPriceCalculationTextView.setText("");
+            holder.mPriceTextView.setText("");
         }
 
         holder.mOptionsButton.setOnClickListener(view -> {
@@ -97,6 +146,8 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
         mUncheckedItems.clear();
         mCheckedItems.clear();
         mNotBuyingItems.clear();
+        int optionalItems = 0;
+        int conditionedItems = 0;
         for (ShoppingListItem item : mAllItems) {
             if (item.getStatus() == ShoppingListItem.UNCHECKED) {
                 mUncheckedItems.add(item);
@@ -105,16 +156,22 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
             } else {    // item.getStatus() == ShoppingListItem.NOT_BUYING
                 mNotBuyingItems.add(item);
             }
+            if (item.isOptional()) {
+                optionalItems++;
+            }
+            if (item.hasCondition()) {
+                conditionedItems++;
+            }
         }
         mClickHandler.updateTotalPrice(getTotalPrice());
         mClickHandler.switchViews(mAllItems.isEmpty());
+        mClickHandler.showFootnotes(optionalItems > 0, conditionedItems > 0);
         notifyDataSetChanged();
     }
 
     public void deleteAll() {
         mAllItems.clear();
         onDataChanged();
-        mClickHandler.updateTotalPrice(getTotalPrice());
     }
 
     @Override
@@ -160,12 +217,6 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
                 .negativeText(R.string.cancel_delete)
                 .onPositive((dialog, which) -> {
                     mAllItems.remove(item);
-                    Toast.makeText(
-                            context,
-                            "The entry \"" + item.getItemName() +
-                                    "\" has been deleted from the shopping list.",
-                            Toast.LENGTH_SHORT
-                    ).show();
                     mClickHandler.updateTotalPrice(getTotalPrice());
                     onDataChanged();
                 })
@@ -190,6 +241,10 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
         void updateTotalPrice(BigDecimal price);
 
         void switchViews(boolean listIsEmpty);
+
+        boolean isTaxIncluded();
+
+        void showFootnotes(boolean optionalItemsExist, boolean conditionedItemsExist);
     }
 
     public class SLAViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -199,15 +254,17 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
 
         public final LinearLayout mContainingLinearLayout;
         public final TextView mItemNameTextView;
+        public final TextView mPriceCalculationTextView;
         public final TextView mPriceTextView;
         public final ImageButton mOptionsButton;
 
         public SLAViewHolder(View view) {
             super(view);
-            mContainingLinearLayout = (LinearLayout) view.findViewById(R.id.ll_shopping_list_item);
-            mItemNameTextView = (TextView) view.findViewById(R.id.tv_shopping_list_item);
-            mPriceTextView = (TextView) view.findViewById(R.id.tv_item_price);
-            mOptionsButton = (ImageButton) view.findViewById(R.id.ib_shopping_list_item_options);
+            mContainingLinearLayout = view.findViewById(R.id.ll_shopping_list_item);
+            mItemNameTextView = view.findViewById(R.id.tv_shopping_list_item);
+            mPriceCalculationTextView = view.findViewById(R.id.tv_item_price_calculations);
+            mPriceTextView = view.findViewById(R.id.tv_item_price);
+            mOptionsButton = view.findViewById(R.id.ib_shopping_list_item_options);
 
             DEFAULT_BACKGROUND = mContainingLinearLayout.getBackground();
             DEFAULT_TEXT_COLOR = mItemNameTextView.getCurrentTextColor();

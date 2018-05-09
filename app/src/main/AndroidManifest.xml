@@ -26,6 +26,15 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
+        <activity
+            android:name=".AutocompleteDictionaryActivity"
+            android:label="@string/title_activity_autocomplete_dictionary"
+            android:parentActivityName=".SettingsActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.bolgarov.alexjr.shoppinglist.SettingsActivity" />
+        </activity>
     </application>
 
 </manifest>

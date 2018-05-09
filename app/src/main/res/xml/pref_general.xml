@@ -72,4 +72,16 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/autocomplete">
+
+        <CheckBoxPreference
+            android:defaultValue="@bool/pref_enable_autocomplete_default"
+            android:key="@string/key_enable_autocomplete_checkbox"
+            android:title="@string/enable_autocomplete" />
+
+        <PreferenceScreen
+            android:key="@string/key_autocomplete_dictionary_intent"
+            android:title="@string/manage_autocomplete_dictionary"></PreferenceScreen>
+    </PreferenceCategory>
+
 </PreferenceScreen>

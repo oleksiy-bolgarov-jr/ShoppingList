@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">Shit We Need</string>
+    <string name="title_activity_autocomplete_dictionary">Autocomplete Dictionary</string>
 
-    <!-- Placeholder values -->
+    <!-- Placeholder values --> <!-- TODO: Delete all of these -->
     <string name="sample_text">Fuck you and your mother</string>
     <string name="sample_price">$0.00</string>
     <string name="sample_tax">+ $0.00</string>
@@ -11,6 +12,9 @@
     \nPlease add an item by pressing <b>+</b>.</string>
     <string name="over_budget_warning_message">You are over budget. Please remove unneeded items or
         replace some items with a cheaper brand.</string>
+    <string name="over_budget_footer">You are over budget.</string>
+    <string name="asterisk_footmote">* Optional</string>
+    <string name="dagger_footnote">† Has condition</string>
 
     <!-- Values for main menu -->
     <string name="settings">Settings</string>
@@ -20,6 +24,7 @@
     <string name="cancel">Cancel</string>
     <string name="confirm">Confirm</string>
     <string name="ok">OK</string>
+    <string name="empty" />     <!-- empty string -->
 
     <!-- Other general potentially useful values -->
     <string name="price_prefix">$</string>
@@ -76,11 +81,16 @@
     like to restore this item to the shopping list?</string>
     <string name="confirm_restore">Yes, restore</string>
     <string name="cancel_restore">No, cancel</string>
+    <string name="condition_item_heading">You are only allowed to buy this item under the following
+        conditions:</string>
+    <string name="condition_item_prompt">Have these conditions been met?</string>
+    <string name="yes">Yes, proceed</string>
+    <string name="no">No, cancel</string>
 
     <!-- String values for settings screen -->
     <string name="budget">Budget</string>
     <string name="set_maximum_budget">Set maximum budget</string>
-    <string name="budget_settings">Budget settings&#8230;</string>
+    <string name="budget_settings">Budget settings</string>
     <string name="maximum_budget">Budget</string>
     <string name="budget_warning">Warning</string>
     <string name="set_warning">Set warning</string>
@@ -94,6 +104,9 @@
     <string name="tax">Tax</string>
     <string name="include_tax">Include tax</string>
     <string name="tax_rate">Tax rate</string>
+    <string name="autocomplete">Autocomplete</string>
+    <string name="enable_autocomplete">Enable autocomplete</string>
+    <string name="manage_autocomplete_dictionary">Manage autocomplete dictionary</string>
 
     <!-- Keys used in settings -->
     <string name="key_root" translatable="false">root_preference_screen</string>
@@ -106,10 +119,35 @@
     <string name="key_warning_percentage_seek_bar" translatable="false">warning_percentage</string>
     <string name="key_include_tax_checkbox" translatable="false">include_tax</string>
     <string name="key_tax_rate_edit_text" translatable="false">tax_rate</string>
+    <string name="key_enable_autocomplete_checkbox" translatable="false">enable_autocomplete
+    </string>
+    <string name="key_autocomplete_dictionary_intent" translatable="false">autocomplete_intent
+    </string>
 
     <!-- Default values used in settings -->
     <string name="pref_maximum_budget_default" translatable="false">100.00</string>
     <string name="pref_warning_fixed_default" translatable="false">80.00</string>
-    <string name="pref_warning_percentage_default" translatable="false">80</string> <!-- TODO: Remove -->
     <string name="pref_tax_rate_default" translatable="false">13</string>
+
+    <!-- Values used in autocomplete dictionary -->
+    <string name="delete_all_from_autocomplete">Delete all entries</string>
+    <string name="no_entries">There are no entries in the autocomplete dictionary.
+    \nTo add an entry, press <b>+</b>, or add an item to the shopping list.</string>
+
+    <!-- Values for delete all entries dialog -->
+    <string name="prompt_delete_all_entries">Are you sure you wish to delete all entries from the
+        autocomplete dictionary?</string>
+    <string name="confirm_delete_all_entries">Yes, delete all entries</string>
+
+    <!-- Values for add entry dialog -->
+    <string name="confirm_add_entry">Add entry</string>
+
+    <!-- Values for delete autocomplete entry dialog -->
+    <string name="prompt_delete_autocomplete_entry">Delete this entry?</string>
+    <string name="confirm_delete_entry">Delete</string>
+    <string name="cancel_delete_entry">Cancel</string>
+    <string name="add_entry_title">Add new entry to autocomplete dictionary</string>
+    <string name="add_entry_title_prompt">Please specify the name of the entry you wish to add
+        in the field below.</string>
+    <string name="add_entry_hint">Entry name</string>
 </resources>

@@ -3,4 +3,5 @@
     <bool name="pref_set_budget_default">true</bool>
     <bool name="pref_include_tax_default">true</bool>
     <bool name="pref_set_warning_default">true</bool>
+    <bool name="pref_enable_autocomplete_default">true</bool>
 </resources>
