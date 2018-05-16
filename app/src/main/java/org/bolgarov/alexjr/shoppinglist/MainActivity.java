@@ -220,10 +220,6 @@ public class MainActivity
                 Intent startSettingsActivity = new Intent(this, SettingsActivity.class);
                 startActivity(startSettingsActivity);
                 return true;
-            case R.id.fuck_shit_piss:
-                // TODO: Once everything works properly, remove this case
-                populateListWithDummyData();
-                return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -500,49 +496,6 @@ public class MainActivity
             mWarningValue = mBudget.multiply(
                     new BigDecimal(mWarningPercentage)
                             .multiply(new BigDecimal("0.01")));
-        }
-    }
-
-    /**
-     * TODO: When this app is in an acceptable state, remove this method.
-     */
-    private void populateListWithDummyData() {
-        String[] dummyItemNames = {
-                "Milk",
-                "Eggs",
-                "Bread",
-                "Dog shit",
-                "Cunt waffles",
-                "Twat waffles",
-                "Time machine",
-                "Donkey testicles",
-                "Fuck you and your mother",
-                "Fish assholes",
-                "Alarm clock",
-                "Tablet",
-                "Giant douche",
-                "Turd sandwich",
-                "EGgs",
-                "Spam",
-                "Fish sticks",
-                "SPAM",
-                "Earphones",
-                "Giant meteors",
-                "Cat litter",
-                "$pam",
-                "SpAm"
-        };
-        int numItems = dummyItemNames.length;
-        ShoppingListItem[] dummyItems = new ShoppingListItem[numItems];
-        for (int i = 0; i < numItems; i++) {
-            dummyItems[i] = new ShoppingListItem(
-                    dummyItemNames[i],
-                    false,
-                    null
-            );
-        }
-        for (ShoppingListItem item : dummyItems) {
-            mShoppingListAdapter.addItemToEndOfShoppingList(item);
         }
     }
 

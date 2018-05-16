@@ -28,12 +28,6 @@
         android:title="@string/delete_all_dialog_title"
         app:showAsAction="never" />
 
-    <!-- TODO: Once everything is working, delete this option. -->
-    <item
-        android:id="@+id/fuck_shit_piss"
-        android:title="@string/DEBUG_add_dummy_data"
-        app:showAsAction="never" />
-
     <item
         android:id="@+id/option_settings"
         android:title="@string/main_menu_option_settings"
