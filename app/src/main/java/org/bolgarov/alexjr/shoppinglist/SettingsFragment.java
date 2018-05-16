@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2018 Oleksiy Bolgarov.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package org.bolgarov.alexjr.shoppinglist;
 
 import android.content.Intent;
@@ -5,6 +24,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.preference.CheckBoxPreference;
 import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
@@ -20,6 +40,7 @@ import org.bolgarov.alexjr.shoppinglist.preferenceSubclasses.PercentPreference;
 import org.bolgarov.alexjr.shoppinglist.preferenceSubclasses.PercentPreferenceDialogFragment;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 public class SettingsFragment
         extends
@@ -27,9 +48,9 @@ public class SettingsFragment
         implements
         SharedPreferences.OnSharedPreferenceChangeListener,
         Preference.OnPreferenceChangeListener {
+    private static final String ROOT_KEY = "root_key";
+    @SuppressWarnings("unused")
     private final String TAG = SettingsFragment.class.getSimpleName();
-
-    public static final String ROOT_KEY = "root_key";
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -88,7 +109,7 @@ public class SettingsFragment
                                 findPreference(getString(R.string.key_warning_fixed_edit_text));
                         Preference percentageWarn =
                                 findPreference(getString(R.string.key_warning_percentage_seek_bar));
-                        if (value.equals(getString(R.string.warn_fixed_price_list_value))) {
+                        if (value.equals(getString(R.string.pref_value_warn_fixed_price))) {
                             fixedPriceWarn.setVisible(true);
                             percentageWarn.setVisible(false);
                         } else {
@@ -122,8 +143,9 @@ public class SettingsFragment
         Bundle args = new Bundle();
         args.putString(ROOT_KEY, preferenceScreen.getKey());
         fragment.setArguments(args);
-        getFragmentManager()
-                .beginTransaction()
+        FragmentManager manager = getFragmentManager();
+        assert manager != null;
+        manager.beginTransaction()
                 .replace(R.id.activity_settings, fragment)
                 .addToBackStack(null)
                 .commit();
@@ -139,8 +161,8 @@ public class SettingsFragment
         }
         if (dialogFragment != null) {
             dialogFragment.setTargetFragment(this, 0);
-            dialogFragment.show(this.getFragmentManager(), "android.support.v7.preference" +
-                    ".PreferenceFragment.DIALOG");
+            dialogFragment.show(Objects.requireNonNull(this.getFragmentManager()),
+                    "android.support.v7.preference.PreferenceFragment.DIALOG");
         } else {
             super.onDisplayPreferenceDialog(preference);
         }
@@ -152,8 +174,8 @@ public class SettingsFragment
         setupPreference(sharedPreferences, preference);
     }
 
-    private void showToastMessage(String message) {
-        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+    private void showToastMessage(int messageResId) {
+        Toast.makeText(getContext(), messageResId, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -184,13 +206,18 @@ public class SettingsFragment
             if (warningValue.compareTo(budget) > 0) {
                 boolean warningSet =
                         sp.getBoolean(getString(R.string.key_set_warning_checkbox), false);
-                if (!warningSet) {
-                    return true;    // No point trying to enforce anything if warning not shown
+                String warningType = sp.getString(getString(R.string.key_warning_type_list),
+                        getString(R.string.pref_value_warn_fixed_price));
+
+                if (!warningSet ||
+                        warningType.equals(getString(R.string.pref_value_warn_percentage))) {
+                    return true;    // No point trying to enforce anything if fixed warning value
+                    // not shown or desired
                     // I know this means that the user will be able to exploit this to set warning
                     // higher than budget, but there is no reason to do that anyway, and it won't
                     // break the app
                 }
-                showToastMessage("Your budget must be larger than the warning value.");
+                showToastMessage(R.string.settings_fragment_toast_invalid_budget);
                 return false;
             }
         } else if (preference.getKey().equals(getString(R.string.key_warning_fixed_edit_text))) {
@@ -203,7 +230,7 @@ public class SettingsFragment
                             sp.getString(getString(R.string.key_maximum_budget_edit_text), "0"));
             BigDecimal warningValue = new BigDecimal((String) newValue);
             if (warningValue.compareTo(budget) > 0) {
-                showToastMessage("The warning value cannot be larger than your budget.");
+                showToastMessage(R.string.settings_fragment_toast_invalid_warning);
                 return false;
             }
         }

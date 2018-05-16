@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright (c) 2018 Oleksiy Bolgarov.
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software
@@ -18,15 +17,30 @@
   ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   -->
 
-<resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:paddingBottom="18dp"
+    android:paddingEnd="?dialogPreferredPadding"
+    android:paddingLeft="?dialogPreferredPadding"
+    android:paddingRight="?dialogPreferredPadding"
+    android:paddingStart="?dialogPreferredPadding"
+    android:paddingTop="18dp">
 
-    <color name="text_color_price_normal">@color/black</color>
-    <color name="text_color_price_over_budget">#F44336</color>
-    <color name="text_color_price_warning">#FFC107</color>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/price_prefix"
+        android:textColor="@color/black"
+        android:textSize="@dimen/text_size_variable" />
 
-    <color name="somewhat_transparent_black">#80000000</color>
-    <color name="black">#000000</color>
-</resources>
+    <EditText
+        android:id="@+id/edit"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:hint="@string/item_dialog_hint_price"
+        android:inputType="numberDecimal" />
+
+</LinearLayout>

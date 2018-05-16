@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2018 Oleksiy Bolgarov.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package org.bolgarov.alexjr.shoppinglist;
 
 import android.content.Context;
@@ -9,8 +28,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
-
 import java.util.List;
 
 public class AutocompleteDictionaryAdapter
@@ -19,7 +36,7 @@ public class AutocompleteDictionaryAdapter
 
     private List<String> mAutocompleteEntries;
 
-    public AutocompleteDictionaryAdapter(AutocompleteDictionaryOnClickHandler handler) {
+    AutocompleteDictionaryAdapter(AutocompleteDictionaryOnClickHandler handler) {
         mClickHandler = handler;
     }
 
@@ -27,7 +44,7 @@ public class AutocompleteDictionaryAdapter
     @Override
     public AutocompleteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         Context context = parent.getContext();
-        int id = R.layout.autocomplete_dictionary_entry;
+        int id = R.layout.item_autocomplete_dictionary_entry;
         LayoutInflater inflater = LayoutInflater.from(context);
         View view = inflater.inflate(id, parent, false);
         return new AutocompleteViewHolder(view);
@@ -58,9 +75,9 @@ public class AutocompleteDictionaryAdapter
     }
 
     /**
-     * Does nothing if the entry already exists in the list
+     * Adds an entry to the dictionary. Does nothing if the entry already exists in the dictionary.
      *
-     * @param entry
+     * @param entry The entry to be added
      */
     public void addEntry(String entry) {
         if (!mAutocompleteEntries.contains(entry)) {
@@ -89,15 +106,13 @@ public class AutocompleteDictionaryAdapter
 
     public interface AutocompleteDictionaryOnClickHandler {
         void onItemClick(int position);
-
-        AppDatabase getDatabase();
     }
 
     public class AutocompleteViewHolder extends RecyclerView.ViewHolder
             implements View.OnClickListener {
-        public final TextView mEntryTextView;
+        final TextView mEntryTextView;
 
-        public AutocompleteViewHolder(View itemView) {
+        AutocompleteViewHolder(View itemView) {
             super(itemView);
             mEntryTextView = itemView.findViewById(R.id.tv_autocomplete_entry);
             itemView.setOnClickListener(this);

@@ -18,15 +18,12 @@
   ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   -->
 
-<resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <color name="text_color_price_normal">@color/black</color>
-    <color name="text_color_price_over_budget">#F44336</color>
-    <color name="text_color_price_warning">#FFC107</color>
+    <item
+        android:id="@+id/delete_all_from_autocomplete"
+        android:title="@string/autocomplete_menu_option_delete_all"
+        app:showAsAction="never" />
 
-    <color name="somewhat_transparent_black">#80000000</color>
-    <color name="black">#000000</color>
-</resources>
+</menu>

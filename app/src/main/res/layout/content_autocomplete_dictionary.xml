@@ -1,4 +1,26 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2018 Oleksiy Bolgarov.
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  ~ and associated documentation files (the "Software"), to deal in the Software without
+  ~ restriction, including without limitation the rights to use, copy, modify, merge, publish,
+  ~ distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+  ~ Software is furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or
+  ~ substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  ~ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  -->
+
+<!-- WARNINGS IGNORED:
+  ~ MergeRootFrame: Replacing the FrameLayout with a merge tag will cause the action bar to obstruct
+  ~                 the RecyclerView
+  -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,10 +28,11 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".AutocompleteDictionaryActivity"
+    tools:ignore="MergeRootFrame"
     tools:showIn="@layout/activity_autocomplete_dictionary">
 
     <android.support.constraint.ConstraintLayout
-        android:id="@+id/no_entries_display"
+        android:id="@+id/constraint_layout_no_autocomplete_entries_display"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone">
@@ -17,7 +40,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/no_entries"
+            android:text="@string/autocomplete_no_entries"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
@@ -31,7 +54,7 @@
         android:layout_height="match_parent" />
 
     <android.support.constraint.ConstraintLayout
-        android:id="@+id/loading_display_autocomplete_dictionary"
+        android:id="@+id/constraint_layout_loading_display_autocomplete_dictionary"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone">

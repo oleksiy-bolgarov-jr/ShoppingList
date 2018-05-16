@@ -18,15 +18,25 @@
   ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   -->
 
-<resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <color name="text_color_price_normal">@color/black</color>
-    <color name="text_color_price_over_budget">#F44336</color>
-    <color name="text_color_price_warning">#FFC107</color>
+    <!-- TODO: Add a calculator and make it always shown -->
 
-    <color name="somewhat_transparent_black">#80000000</color>
-    <color name="black">#000000</color>
-</resources>
+    <item
+        android:id="@+id/option_delete_all"
+        android:title="@string/delete_all_dialog_title"
+        app:showAsAction="never" />
+
+    <!-- TODO: Once everything is working, delete this option. -->
+    <item
+        android:id="@+id/fuck_shit_piss"
+        android:title="@string/DEBUG_add_dummy_data"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/option_settings"
+        android:title="@string/main_menu_option_settings"
+        app:showAsAction="never" />
+
+</menu>

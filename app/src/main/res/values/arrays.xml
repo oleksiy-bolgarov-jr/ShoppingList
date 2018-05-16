@@ -1,13 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<!--
+  ~ Copyright (c) 2018 Oleksiy Bolgarov.
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  ~ and associated documentation files (the "Software"), to deal in the Software without
+  ~ restriction, including without limitation the rights to use, copy, modify, merge, publish,
+  ~ distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+  ~ Software is furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or
+  ~ substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  ~ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  -->
 
+<resources>
     <string-array name="warning_type_labels">
-        <item>@string/warning_fixed_list_entry</item>
-        <item>@string/warning_percentage_list_entry</item>
+        <item>@string/pref_list_entry_warning_fixed</item>
+        <item>@string/pref_list_entry_warning_percentage</item>
     </string-array>
 
     <integer-array name="warning_type_values">
-        <item>@string/warn_fixed_price_list_value</item>
-        <item>@string/warn_percentage_list_value</item>
+        <item>@string/pref_value_warn_fixed_price</item>
+        <item>@string/pref_value_warn_percentage</item>
     </integer-array>
 </resources>

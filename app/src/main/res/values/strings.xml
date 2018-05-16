@@ -1,59 +1,88 @@
+<!--
+  ~ Copyright (c) 2018 Oleksiy Bolgarov.
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  ~ and associated documentation files (the "Software"), to deal in the Software without
+  ~ restriction, including without limitation the rights to use, copy, modify, merge, publish,
+  ~ distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+  ~ Software is furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or
+  ~ substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  ~ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  -->
+
 <resources>
     <string name="app_name">Shit We Need</string>
     <string name="title_activity_autocomplete_dictionary">Autocomplete Dictionary</string>
 
-    <!-- Placeholder values --> <!-- TODO: Delete all of these -->
-    <string name="sample_text">Fuck you and your mother</string>
-    <string name="sample_price">$0.00</string>
-    <string name="sample_tax">+ $0.00</string>
-
     <!-- Values for main activity -->
-    <string name="no_items">You have no items in your shopping list.
-    \nPlease add an item by pressing <b>+</b>.</string>
-    <string name="over_budget_warning_message">You are over budget. Please remove unneeded items or
+    <string name="main_activity_no_items">You have no items in your shopping list.
+        \nPlease add an item by pressing <b>+</b>.</string>
+    <string name="over_budget_dialog_body">You are over budget. Please remove unneeded items or
         replace some items with a cheaper brand.</string>
-    <string name="over_budget_footer">You are over budget.</string>
-    <string name="asterisk_footmote">* Optional</string>
-    <string name="dagger_footnote">† Has condition</string>
+    <string name="over_budget_dialog_dismiss_button">OK</string>
+    <string name="main_activity_footer_over_budget_warning">You are over budget.</string>
+    <string name="main_activity_footer_asterisk_footnote">* Optional</string>
+    <string name="main_activity_footer_dagger_footnote">&#8224; Has condition</string>
+
+    <!-- Main activity placeholder strings -->
+    <string name="main_activity_placeholder_footer_total">$%.2f / $%.2f</string>
 
     <!-- Values for main menu -->
-    <string name="settings">Settings</string>
+    <string name="main_menu_option_settings">Settings</string>
 
-    <!-- General values for dialogs -->
-    <string name="done">Done</string>
-    <string name="cancel">Cancel</string>
-    <string name="confirm">Confirm</string>
-    <string name="ok">OK</string>
-    <string name="empty" />     <!-- empty string -->
+    <!-- Item view placeholder strings -->
+    <string name="item_placeholder_calc_per_unit_no_tax">$%.2f &#215; %d =\u0020</string>
+    <string name="item_placeholder_calc_per_unit">$%.2f &#215; %d + $%.2f tax =\u0020</string>
+    <string name="item_decimal_format_weight">#.###</string>    <!-- For use with DecimalFormat -->
+    <string name="item_placeholder_calc_per_weight_no_tax">$%.2f &#215; %skg =\u0020</string>
+    <string name="item_placeholder_calc_per_weight">$%.2f &#215; %skg + $%.2f tax =\u0020</string>
+    <string name="item_placeholder_price">$%.2f</string>
 
     <!-- Other general potentially useful values -->
-    <string name="price_prefix">$</string>
+    <string name="empty" />     <!-- empty string -->
+    <string name="price_prefix">$</string>  <!-- For languages that put the price symbol before the
+                                                 price, ex. $5.00 in English -->
+    <string name="price_suffix" />  <!-- For languages that put the price symbol after the price,
+                                         ex. 5,00 $ in Quebecois French. Empty because it is not
+                                         used in English. -->
     <string name="percent_suffix">%</string>
+    <string name="times_sign">&#215;</string>
+    <string name="dagger">&#8224;</string>
 
     <!-- Values for add item dialog -->
-    <string name="add_item_title">Add new item to shopping list</string>
-    <string name="add_item_hint">Item name</string>
-    <string name="save_prompt">Save this item to the autocomplete dictionary</string>
-    <string name="optional_prompt">Make this item optional</string>
-    <string name="condition_hint">(Optional) Condition to buy item</string>
-    <string name="add_another_item">Add another</string>
-    <string name="add_this_and_finish">Add &amp; finish</string>
+    <string name="add_new_item_dialog_title">Add new item to shopping list</string>
+    <string name="add_new_item_dialog_add_item_hint">Item name</string>
+    <string name="add_new_item_dialog_save_prompt">Save this item to the autocomplete dictionary
+    </string>
+    <string name="add_new_item_dialog_optional_prompt">Make this item optional</string>
+    <string name="add_new_item_dialog_condition_hint">(Optional) Condition to buy item</string>
+    <string name="add_new_item_dialog_positive">Add another</string>
+    <string name="add_new_item_dialog_negative">Cancel</string>
+    <string name="add_new_item_dialog_neutral">Add &amp; finish</string>
 
     <!-- Values for item options -->
-    <string name="delete">Delete</string>
+    <string name="shopping_list_item_description_options">Options</string>
+    <string name="shopping_list_item_menu_option_delete">Delete</string>
 
     <!-- Values for delete item dialog -->
-    <string name="prompt_delete">Are you sure you want to delete this item?</string>
-    <string name="confirm_delete">Yes, delete</string>
-    <string name="cancel_delete">No, cancel</string>
+    <string name="delete_item_dialog_body">Are you sure you want to delete this item?</string>
+    <string name="delete_item_dialog_positive">Yes, delete</string>
+    <string name="delete_item_dialog_negative">No, cancel</string>
 
     <!-- Values for delete all items dialog -->
-    <string name="delete_all">Delete all items</string>
-    <string name="prompt_delete_all">You are about to delete all items from the shopping list. This
-    includes unmarked items, confirmed items, and items you have specified that you are not buying.
-    Are you sure you wish to do this?</string>
-    <string name="confirm_delete_all">Yes, delete all items</string>
-    <string name="cancel_delete_all">No, cancel</string>
+    <string name="delete_all_dialog_title">Delete all items</string>
+    <string name="delete_all_dialog_body">You are about to delete all items from the shopping list.
+        This includes unmarked items, confirmed items, and items you have specified that you are not
+        buying. Are you sure you wish to do this?</string>
+    <string name="delete_all_dialog_positive">Yes, delete all items</string>
+    <string name="delete_all_dialog_negative">No, cancel</string>
 
     <!-- Values for item-specific dialogs -->
     <string name="per_unit">Per unit</string>
@@ -61,52 +90,81 @@
     <string name="per_kg">Per kg</string>
     <string name="pricing">Pricing</string>
     <string name="price">Price</string>
+    <string name="item_dialog_hint_price">0.00</string>
+    <string name="item_dialog_hint_weight">0.0</string>
+    <string name="item_dialog_hint_ounces">0</string>
     <string name="price_per_unit">Price per unit</string>
     <string name="price_per_kg">Price per kilogram</string>
     <string name="price_per_lb">Price per pound</string>
-    <string name="times_sign">&#215;</string>
     <string name="quantity">Quantity</string>
     <string name="weight">Weight</string>
     <string name="kg">kg</string>
     <string name="lb">lb</string>
     <string name="oz">oz</string>
-    <string name="total_price_no_tax_title">Price before tax</string>
-    <string name="tax_title">Tax</string>
-    <string name="total_price_title">Total price</string>
-    <string name="not_buying">I am not buying this</string>
-    <string name="move_to_top">Reset</string>
-    <string name="save_changes">Save changes</string>
-    <string name="do_not_save">Do not save</string>
-    <string name="prompt_restore">You have specified that you are not buying this item. Would you
-    like to restore this item to the shopping list?</string>
-    <string name="confirm_restore">Yes, restore</string>
-    <string name="cancel_restore">No, cancel</string>
-    <string name="condition_item_heading">You are only allowed to buy this item under the following
-        conditions:</string>
-    <string name="condition_item_prompt">Have these conditions been met?</string>
-    <string name="yes">Yes, proceed</string>
-    <string name="no">No, cancel</string>
-
-    <!-- String values for settings screen -->
-    <string name="budget">Budget</string>
-    <string name="set_maximum_budget">Set maximum budget</string>
-    <string name="budget_settings">Budget settings</string>
-    <string name="maximum_budget">Budget</string>
-    <string name="budget_warning">Warning</string>
-    <string name="set_warning">Set warning</string>
-    <string name="warning_type">Type</string>
-    <string name="warning_fixed_list_entry">Fixed amount</string>
-    <string name="warning_percentage_list_entry">Percentage of budget</string>
-    <string name="warn_fixed_price_list_value" translatable="false">fixed_amount_val</string>
-    <string name="warn_percentage_list_value" translatable="false">percentage_val</string>
-    <string name="warning_fixed">Amount</string>
-    <string name="warning_percentage">Percentage</string>
+    <string name="price_before_tax">Price before tax</string>
     <string name="tax">Tax</string>
-    <string name="include_tax">Include tax</string>
-    <string name="tax_rate">Tax rate</string>
-    <string name="autocomplete">Autocomplete</string>
-    <string name="enable_autocomplete">Enable autocomplete</string>
-    <string name="manage_autocomplete_dictionary">Manage autocomplete dictionary</string>
+    <string name="total_price">Total price</string>
+    <string name="item_dialog_unchecked_positive">Confirm</string>
+    <string name="item_dialog_unchecked_neutral">I am not buying this</string>
+    <string name="item_dialog_unchecked_negative">Cancel</string>
+    <string name="item_dialog_checked_positive">Save changes</string>
+    <string name="item_dialog_checked_neutral">Move back to unchecked</string>
+    <string name="item_dialog_checked_negative">Cancel</string>
+    <string name="item_dialog_not_buying_body">You have specified that you are not buying this item.
+        Would you like to restore this item to the shopping list?</string>
+    <string name="item_dialog_not_buying_positive">Yes, restore</string>
+    <string name="item_dialog_not_buying_negative">No, cancel</string>
+    <string name="item_dialog_condition_heading">You are only allowed to buy this item under the
+        following conditions:</string>
+    <string name="item_dialog_condition_prompt">Have these conditions been met?</string>
+    <string name="item_dialog_condition_positive">Yes, proceed</string>
+    <string name="item_dialog_condition_negative">No, cancel</string>
+    <string name="item_dialog_description_decrease_quantity">Decrease quantity by 1</string>
+    <string name="item_dialog_description_increase_quantity">Increase quantity by 1</string>
+
+    <!-- Item dialog placeholders -->
+    <string name="item_dialog_placeholder_total_price_no_tax">$%.2f</string>
+    <string name="item_dialog_placeholder_tax">+ $%.2f</string>
+    <string name="item_dialog_placeholder_total_price">$%.2f</string>
+    <string name="item_dialog_placeholder_price_edit_text">%.2f</string>
+    <string name="item_dialog_decimal_format_weight_edit_text">#.###</string> <!-- For use with
+                                                                                   DecimalFormat -->
+
+    <!-- String values for settings fragment -->
+    <string name="settings_fragment_toast_invalid_budget">Your budget must be larger than your
+        warning value.</string>
+    <string name="settings_fragment_toast_invalid_warning">The warning value cannot be larger than
+        your budget.</string>
+
+    <!-- String values for preferences -->
+    <string name="pref_title_budget">Budget</string>
+    <string name="pref_title_set_maximum_budget">Set maximum budget</string>
+    <string name="pref_title_budget_settings">Budget settings</string>
+    <string name="pref_title_maximum_budget">Budget</string>
+    <string name="pref_title_budget_warning">Warning</string>
+    <string name="pref_title_set_warning">Set warning</string>
+    <string name="pref_title_warning_type">Type</string>
+    <string name="pref_list_entry_warning_fixed">Fixed amount</string>
+    <string name="pref_list_entry_warning_percentage">Percentage of budget</string>
+    <string name="pref_value_warn_fixed_price" translatable="false">fixed_amount_val</string>
+    <string name="pref_value_warn_percentage" translatable="false">percentage_val</string>
+    <string name="pref_title_warning_fixed">Amount</string>
+    <string name="pref_title_warning_percentage">Percentage</string>
+    <string name="pref_title_tax">Tax</string>
+    <string name="pref_title_include_tax">Include tax</string>
+    <string name="pref_title_tax_rate">Tax rate</string>
+    <string name="pref_title_autocomplete">Autocomplete</string>
+    <string name="pref_title_enable_autocomplete">Enable autocomplete</string>
+    <string name="pref_title_manage_autocomplete_dictionary">Manage autocomplete dictionary</string>
+
+    <!-- Values for custom preference dialogs -->
+    <string name="money_pref_dialog_positive">Confirm</string>
+    <string name="money_pref_dialog_negative">Cancel</string>
+    <string name="percent_pref_dialog_positive">Confirm</string>
+    <string name="percent_pref_dialog_negative">Cancel</string>
+
+    <!-- Placeholders in custom preferences -->
+    <string name="pref_placeholder_seek_bar_edit_text">%d</string>
 
     <!-- Keys used in settings -->
     <string name="key_root" translatable="false">root_preference_screen</string>
@@ -125,29 +183,34 @@
     </string>
 
     <!-- Default values used in settings -->
-    <string name="pref_maximum_budget_default" translatable="false">100.00</string>
-    <string name="pref_warning_fixed_default" translatable="false">80.00</string>
-    <string name="pref_tax_rate_default" translatable="false">13</string>
+    <string name="pref_default_maximum_budget">100.00</string>
+    <string name="pref_default_warning_fixed">80.00</string>
+    <string name="pref_default_tax_rate" translatable="false">13</string>
 
     <!-- Values used in autocomplete dictionary -->
-    <string name="delete_all_from_autocomplete">Delete all entries</string>
-    <string name="no_entries">There are no entries in the autocomplete dictionary.
+    <string name="autocomplete_menu_option_delete_all">Delete all entries</string>
+    <string name="autocomplete_no_entries">There are no entries in the autocomplete dictionary.
     \nTo add an entry, press <b>+</b>, or add an item to the shopping list.</string>
 
     <!-- Values for delete all entries dialog -->
-    <string name="prompt_delete_all_entries">Are you sure you wish to delete all entries from the
-        autocomplete dictionary?</string>
-    <string name="confirm_delete_all_entries">Yes, delete all entries</string>
+    <string name="autocomplete_delete_all_dialog_body">Are you sure you wish to delete all entries
+        from the autocomplete dictionary?</string>
+    <string name="autocomplete_delete_all_dialog_positive">Yes, delete all entries</string>
 
     <!-- Values for add entry dialog -->
-    <string name="confirm_add_entry">Add entry</string>
+    <string name="autocomplete_add_entry_dialog_positive">Add entry</string>
+    <string name="autocomplete_add_entry_dialog_negative">Cancel</string>
+    <string name="autocomplete_add_entry_dialog_title">Add new entry to autocomplete dictionary
+    </string>
+    <string name="autocomplete_add_entry_dialog_prompt">Please specify the name of the entry you
+        wish to add in the field below.</string>
+    <string name="autocomplete_add_entry_dialog_hint">Entry name</string>
 
     <!-- Values for delete autocomplete entry dialog -->
-    <string name="prompt_delete_autocomplete_entry">Delete this entry?</string>
-    <string name="confirm_delete_entry">Delete</string>
-    <string name="cancel_delete_entry">Cancel</string>
-    <string name="add_entry_title">Add new entry to autocomplete dictionary</string>
-    <string name="add_entry_title_prompt">Please specify the name of the entry you wish to add
-        in the field below.</string>
-    <string name="add_entry_hint">Entry name</string>
+    <string name="autocomplete_delete_entry_dialog_body">Delete this entry?</string>
+    <string name="autocomplete_delete_entry_dialog_positive">Delete</string>
+    <string name="autocomplete_delete_entry_dialog_negative">Cancel</string>
+
+    <!-- TODO: Delete this when no longer using -->
+    <string name="DEBUG_add_dummy_data">DEBUG: Add dummy data</string>
 </resources>

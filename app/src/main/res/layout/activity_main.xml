@@ -1,4 +1,22 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2018 Oleksiy Bolgarov.
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  ~ and associated documentation files (the "Software"), to deal in the Software without
+  ~ restriction, including without limitation the rights to use, copy, modify, merge, publish,
+  ~ distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+  ~ Software is furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or
+  ~ substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  ~ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  -->
+
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,7 +25,7 @@
     tools:context=".MainActivity">
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/add_item_fab"
+        android:id="@+id/fab_add_item"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end|bottom"
@@ -28,7 +46,7 @@
             android:paddingBottom="40dp" />
 
         <android.support.constraint.ConstraintLayout
-            android:id="@+id/no_items_display"
+            android:id="@+id/constraint_layout_no_items_display"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone">
@@ -36,7 +54,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/no_items"
+                android:text="@string/main_activity_no_items"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
@@ -45,7 +63,7 @@
         </android.support.constraint.ConstraintLayout>
 
         <android.support.constraint.ConstraintLayout
-            android:id="@+id/loading_display"
+            android:id="@+id/constraint_layout_loading_display_main"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone">
@@ -73,7 +91,6 @@
                 android:paddingTop="8dp">
 
                 <LinearLayout
-                    android:id="@+id/anal_sauce"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom"
@@ -81,30 +98,29 @@
                     android:paddingEnd="86dp"
                     android:paddingLeft="8dp"
                     android:paddingRight="86dp"
-                    android:paddingStart="8dp"
-                    app:layout_constraintBottom_toBottomOf="parent"> <!-- TODO: Remove the constraint attribute, it is useless -->
+                    android:paddingStart="8dp">
 
                     <TextView
-                        android:id="@+id/total_price_text_view"
+                        android:id="@+id/tv_total_price"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/price"
                         android:textColor="@color/text_color_price_normal"
-                        android:textSize="@dimen/dialog_item_value" />
+                        android:textSize="@dimen/text_size_variable" />
 
                     <TextView
                         android:id="@+id/tv_over_budget_footer"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/over_budget_footer"
+                        android:text="@string/main_activity_footer_over_budget_warning"
                         android:textColor="@color/text_color_price_over_budget"
                         android:visibility="gone" />
 
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/footnotes"
+                    android:id="@+id/linear_layout_footnotes"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -115,7 +131,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/asterisk_footmote"
+                        android:text="@string/main_activity_footer_asterisk_footnote"
                         android:visibility="gone" />
 
                     <TextView
@@ -123,7 +139,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/dagger_footnote"
+                        android:text="@string/main_activity_footer_dagger_footnote"
                         android:visibility="gone" />
 
                 </LinearLayout>

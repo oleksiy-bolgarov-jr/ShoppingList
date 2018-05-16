@@ -1,4 +1,22 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2018 Oleksiy Bolgarov.
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  ~ and associated documentation files (the "Software"), to deal in the Software without
+  ~ restriction, including without limitation the rights to use, copy, modify, merge, publish,
+  ~ distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+  ~ Software is furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or
+  ~ substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  ~ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  -->
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,11 +26,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/pricing"
-        android:textColor="@color/text_color_dialog_item_title"
-        android:textSize="@dimen/dialog_item_title" />
+        android:textColor="@color/somewhat_transparent_black"
+        android:textSize="@dimen/text_size_label" />
 
     <RadioGroup
-        android:id="@+id/pricing_radio_group"
+        android:id="@+id/radio_group_pricing"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
@@ -20,32 +38,32 @@
         android:paddingTop="4dp">
 
         <RadioButton
-            android:id="@+id/per_unit"
+            android:id="@+id/rb_per_unit"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:checked="true"
-            android:color="@color/text_color_dialog_item_value"
+            android:color="@color/black"
             android:text="@string/per_unit"
-            android:textSize="@dimen/dialog_item_value" />
+            android:textSize="@dimen/text_size_variable" />
 
         <RadioButton
-            android:id="@+id/per_kg"
+            android:id="@+id/rb_per_kg"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:color="@color/text_color_dialog_item_value"
+            android:color="@color/black"
             android:text="@string/per_kg"
-            android:textSize="@dimen/dialog_item_value" />
+            android:textSize="@dimen/text_size_variable" />
 
         <RadioButton
-            android:id="@+id/per_pound"
+            android:id="@+id/rb_per_pound"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:color="@color/text_color_dialog_item_value"
+            android:color="@color/black"
             android:text="@string/per_pound"
-            android:textSize="@dimen/dialog_item_value" />
+            android:textSize="@dimen/text_size_variable" />
 
     </RadioGroup>
 
@@ -53,6 +71,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="18dp"
+        android:baselineAligned="false"
         android:orientation="horizontal">
 
         <LinearLayout
@@ -62,11 +81,11 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/price_title"
+                android:id="@+id/tv_price_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/price_per_unit"
-                android:textColor="@color/text_color_dialog_item_title" />
+                android:textColor="@color/somewhat_transparent_black" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -77,16 +96,24 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:color="@color/text_color_dialog_item_value"
                     android:text="@string/price_prefix"
-                    android:textSize="@dimen/dialog_item_value" />
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_variable" />
 
                 <EditText
-                    android:id="@+id/price"
+                    android:id="@+id/et_price"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:hint="@string/item_dialog_hint_price"
                     android:inputType="numberDecimal" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/price_suffix"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_variable" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -94,15 +121,15 @@
                     android:paddingLeft="8dp"
                     android:paddingRight="8dp"
                     android:text="@string/times_sign"
-                    android:textColor="@color/text_color_dialog_item_value"
-                    android:textSize="@dimen/dialog_item_value" />
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_variable" />
 
             </LinearLayout>
 
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/if_per_unit_selected"
+            android:id="@+id/ll_if_per_unit_selected"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -112,8 +139,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:text="@string/quantity"
-                android:textColor="@color/text_color_dialog_item_title"
-                android:textSize="@dimen/dialog_item_title" />
+                android:textColor="@color/somewhat_transparent_black"
+                android:textSize="@dimen/text_size_label" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -122,30 +149,32 @@
                 android:orientation="horizontal">
 
                 <ImageButton
-                    android:id="@+id/decrease_quantity_button"
+                    android:id="@+id/btn_decrease_quantity"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
+                    android:contentDescription="@string/item_dialog_description_decrease_quantity"
                     android:paddingLeft="8dp"
                     android:paddingRight="8dp"
                     android:src="@drawable/ic_remove_black_24dp" />
 
                 <TextView
-                    android:id="@+id/quantity"
+                    android:id="@+id/tv_quantity"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:paddingLeft="8dp"
                     android:paddingRight="8dp"
                     android:textAlignment="center"
-                    android:textColor="@color/text_color_dialog_item_value"
-                    android:textSize="@dimen/dialog_item_value" />
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_variable" />
 
                 <ImageButton
-                    android:id="@+id/increase_quantity_button"
+                    android:id="@+id/btn_increase_quantity"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
+                    android:contentDescription="@string/item_dialog_description_increase_quantity"
                     android:paddingLeft="8dp"
                     android:paddingRight="8dp"
                     android:src="@drawable/ic_add_black_24dp" />
@@ -155,7 +184,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/if_per_kg_selected"
+            android:id="@+id/ll_if_per_kg_selected"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="3"
@@ -166,8 +195,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/weight"
-                android:textColor="@color/text_color_dialog_item_title"
-                android:textSize="@dimen/dialog_item_title" />
+                android:textColor="@color/somewhat_transparent_black"
+                android:textSize="@dimen/text_size_label" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -176,25 +205,26 @@
                 android:orientation="horizontal">
 
                 <EditText
-                    android:id="@+id/kg"
+                    android:id="@+id/et_kg"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:hint="@string/item_dialog_hint_weight"
                     android:inputType="numberDecimal" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/kg"
-                    android:textColor="@color/text_color_dialog_item_value"
-                    android:textSize="@dimen/dialog_item_value" />
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_variable" />
 
             </LinearLayout>
 
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/if_per_lb_selected"
+            android:id="@+id/ll_if_per_lb_selected"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
@@ -205,8 +235,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/weight"
-                android:textColor="@color/text_color_dialog_item_title"
-                android:textSize="@dimen/dialog_item_title" />
+                android:textColor="@color/somewhat_transparent_black"
+                android:textSize="@dimen/text_size_label" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -215,33 +245,36 @@
                 android:orientation="horizontal">
 
                 <EditText
-                    android:id="@+id/lb"
+                    android:id="@+id/et_lb"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:hint="@string/item_dialog_hint_weight"
                     android:inputType="numberDecimal" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
                     android:layout_marginRight="4dp"
-                    android:color="@color/text_color_dialog_item_value"
+                    android:color="@color/black"
                     android:text="@string/lb"
-                    android:textSize="@dimen/dialog_item_value" />
+                    android:textSize="@dimen/text_size_variable" />
 
                 <EditText
-                    android:id="@+id/oz"
+                    android:id="@+id/et_oz"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:hint="@string/item_dialog_hint_ounces"
                     android:inputType="number" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/oz"
-                    android:textColor="@color/text_color_dialog_item_value"
-                    android:textSize="@dimen/dialog_item_value" />
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_variable" />
 
             </LinearLayout>
 
@@ -250,7 +283,7 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/total_price_no_tax_linear_layout"
+        android:id="@+id/ll_total_price_no_tax"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical">
@@ -259,23 +292,22 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:text="@string/total_price_no_tax_title"
-            android:textColor="@color/text_color_dialog_item_title"
-            android:textSize="@dimen/dialog_item_title" />
+            android:text="@string/price_before_tax"
+            android:textColor="@color/somewhat_transparent_black"
+            android:textSize="@dimen/text_size_label" />
 
         <TextView
-            android:id="@+id/total_item_price_no_tax_text_view"
+            android:id="@+id/tv_total_item_price_no_tax"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/sample_price"
-            android:textColor="@color/text_color_dialog_item_value"
-            android:textSize="@dimen/dialog_item_value" />
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_variable" />
 
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/tax_linear_layout"
+        android:id="@+id/ll_tax"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical">
@@ -284,18 +316,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:text="@string/tax_title"
-            android:textColor="@color/text_color_dialog_item_title"
-            android:textSize="@dimen/dialog_item_title" />
+            android:text="@string/tax"
+            android:textColor="@color/somewhat_transparent_black"
+            android:textSize="@dimen/text_size_label" />
 
         <TextView
-            android:id="@+id/tax_text_view"
+            android:id="@+id/tv_tax"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/sample_tax"
-            android:textColor="@color/text_color_dialog_item_value"
-            android:textSize="@dimen/dialog_item_value" />
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_variable" />
 
     </LinearLayout>
 
@@ -308,18 +339,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:text="@string/total_price_title"
-            android:textColor="@color/text_color_dialog_item_title"
-            android:textSize="@dimen/dialog_item_title" />
+            android:text="@string/total_price"
+            android:textColor="@color/somewhat_transparent_black"
+            android:textSize="@dimen/text_size_label" />
 
         <TextView
-            android:id="@+id/total_item_price_text_view"
+            android:id="@+id/tv_total_item_price"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/sample_price"
-            android:textColor="@color/text_color_dialog_item_value"
-            android:textSize="@dimen/dialog_item_value" />
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_variable" />
 
     </LinearLayout>
 

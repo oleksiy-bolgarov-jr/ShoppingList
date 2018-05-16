@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2018 Oleksiy Bolgarov.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package org.bolgarov.alexjr.shoppinglist;
 
 import android.content.Intent;
@@ -26,7 +45,6 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -38,8 +56,9 @@ import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemDatabaseEntity;
 
+import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,31 +69,33 @@ public class MainActivity
         ShoppingListAdapter.ShoppingListAdapterOnClickHandler,
         SharedPreferences.OnSharedPreferenceChangeListener {
 
+    /**
+     * Debug tag for logging
+     */
+    @SuppressWarnings("unused")
     public static final String TAG = MainActivity.class.getSimpleName();
 
     /*
      * TODO: Next steps:
-     * Polish up the optional and condition bits, also improving code
      * Improve the "delete all" option so you can delete from separate categories
      * Try to prevent user from entering negative values
-     * Add a calculator to conveniently calculate price per kg given price per lb or vice versa, or price per weight/uint given total price and weight/unit
+     * Add a calculator to conveniently calculate price per kg given price per lb or vice versa, or price per weight/unit given total price and weight/unit
      * Add promotions (e.g. 3 for $6.00, etc.)
      * Add categories (after Github)
      * Save states to settings
      * OPTIONAL: Use CardViews as list items
      */
 
-    private AppDatabase db;
+    private AppDatabase mDatabase;
 
-    private RecyclerView mRecyclerView;
     private ShoppingListAdapter mShoppingListAdapter;
 
-    private ConstraintLayout mErrorDisplay;
-    private ConstraintLayout mLoadingIndicator;
+    // Main view
+    private RecyclerView mRecyclerView;
+    private ConstraintLayout mErrorDisplayConstraintLayout;
+    private ConstraintLayout mLoadingIndicatorConstraintLayout;
 
-    private FloatingActionButton mAddItemButton;
-
-    private LinearLayout mFooter;
+    // Footer
     private LinearLayout mFootnotes;
     private TextView mTotalPriceTextView;
     private TextView mOverBudgetTextView;
@@ -97,35 +118,36 @@ public class MainActivity
     private String[] mAutocompleteDictionary;
 
     // Add new item dialog
-    private AutoCompleteTextView itemNameEditText;
-    private CheckBox saveItemCheckBox;
-    private CheckBox optionalCheckBox;
-    private EditText conditionEditText;
-    private View addNewItemPositiveAction;
-    private View addNewItemNeutralAction;
+    // I have chosen not to prefix these with m to distinguish them from the main values.
+    private AutoCompleteTextView addNewItemDialogItemNameEditText;
+    private CheckBox addNewItemDialogSaveItemCheckBox;
+    private CheckBox addNewItemDialogOptionalCheckBox;
+    private EditText addNewItemDialogConditionEditText;
+    private View addNewItemDialogPositiveAction;
+    private View addNewItemDialogNeutralAction;
 
-    // On select checked item dialog
-    private RadioGroup pricingRadioGroup;
-    private RadioButton perUnitRadioButton, perKgRadioButton, perLbRadioButton;
-    private int whichRadioButtonChecked;
-    private TextView priceTitleTextView;
-    private LinearLayout ifPerUnitSelectedLayout, ifPerKilogramSelectedLayout,
-            ifPerPoundSelectedLayout;
-    private EditText priceEditText;
-    private ImageButton decreaseQuantityImageButton, increaseQuantityImageButton;
-    private TextView quantityTextView;
-    private EditText kilogramsEditText;
-    private EditText poundsEditText, ouncesEditText;
-    private TextView totalItemPriceNoTaxTextView;
-    private TextView taxTextView;
-    private TextView totalItemPriceTextView;
-    private LinearLayout priceWithoutTaxLinearLayout, taxLinearLayout;
-    private View itemPositiveAction;
-    private ShoppingListItem currentItem;
-    private int currentItemQuantity;
-    private boolean weightWasChanged = false;
-
-    private TextView conditionTextView;
+    // On select item dialog
+    private RadioGroup itemDialogPricingRadioGroup;
+    private RadioButton itemDialogPerUnitRadioButton, itemDialogPerKgRadioButton,
+            itemDialogPerLbRadioButton;
+    private int itemDialogWhichRadioButtonChecked;
+    private TextView itemDialogPriceTitleTextView;
+    private LinearLayout itemDialogIfPerUnitSelectedLayout, itemDialogIfPerKilogramSelectedLayout,
+            itemDialogIfPerPoundSelectedLayout;
+    private EditText itemDialogPriceEditText;
+    private ImageButton itemDialogDecreaseQuantityImageButton,
+            itemDialogIncreaseQuantityImageButton;
+    private TextView itemDialogQuantityTextView;
+    private EditText itemDialogKilogramsEditText;
+    private EditText itemDialogPoundsEditText, itemDialogOuncesEditText;
+    private TextView itemDialogTotalItemPriceNoTaxTextView;
+    private TextView itemDialogTaxTextView;
+    private TextView itemDialogTotalItemPriceTextView;
+    private LinearLayout itemDialogPriceWithoutTaxLinearLayout, itemDialogTaxLinearLayout;
+    private View itemDialogPositiveAction;
+    private ShoppingListItem itemDialogCurrentItem;
+    private int itemDialogCurrentItemQuantity;
+    private boolean itemDialogWeightWasChanged = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,7 +155,7 @@ public class MainActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view_shopping_list);
+        mRecyclerView = findViewById(R.id.recycler_view_shopping_list);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this,
                 LinearLayoutManager.VERTICAL, false);
@@ -142,117 +164,30 @@ public class MainActivity
 
         mRecyclerView.setHasFixedSize(true);
 
-        mShoppingListAdapter = new ShoppingListAdapter(this);
+        mShoppingListAdapter = new ShoppingListAdapter(this, this);
 
         mRecyclerView.setAdapter(mShoppingListAdapter);
 
-        mFooter = (LinearLayout) findViewById(R.id.anal_sauce);
-        mFootnotes = findViewById(R.id.footnotes);
-        mTotalPriceTextView = (TextView) findViewById(R.id.total_price_text_view);
-        mOverBudgetTextView = (TextView) findViewById(R.id.tv_over_budget_footer);
+        mFootnotes = findViewById(R.id.linear_layout_footnotes);
+        mTotalPriceTextView = findViewById(R.id.tv_total_price);
+        mOverBudgetTextView = findViewById(R.id.tv_over_budget_footer);
         mOptionalTextView = findViewById(R.id.tv_optional_footnote);
         mConditionTextView = findViewById(R.id.tv_condition_footnote);
 
-        mErrorDisplay = (ConstraintLayout) findViewById(R.id.no_items_display);
-        mLoadingIndicator = (ConstraintLayout) findViewById(R.id.loading_display);
+        mErrorDisplayConstraintLayout = findViewById(R.id.constraint_layout_no_items_display);
+        mLoadingIndicatorConstraintLayout = findViewById(R.id.constraint_layout_loading_display_main);
 
-        mAddItemButton = findViewById(R.id.add_item_fab);
-        mAddItemButton.setOnClickListener(v -> showAddNewItemDialog());
+        FloatingActionButton addItemButton = findViewById(R.id.fab_add_item);
+        addItemButton.setOnClickListener(v -> showAddNewItemDialog());
 
         setupSharedPreferences();
         updateWarning();
 
-        db = AppDatabase.getDatabaseInstance(this);
+        mDatabase = AppDatabase.getDatabaseInstance(this);
         switchViews(mShoppingListAdapter.getItemCount() == 0);
 
-        new RetrieveItemsTask().execute();
+        executeRetrieveItemsAction();
         setupAutocompleteDictionary();
-    }
-
-    private void setupSharedPreferences() {
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-
-        mBudgetIsSet = sp.getBoolean(
-                getString(R.string.key_set_maximum_budget_checkbox),
-                getResources().getBoolean(R.bool.pref_set_budget_default)
-        );
-
-        String budgetString = sp.getString(
-                getString(R.string.key_maximum_budget_edit_text),
-                getResources().getString(R.string.pref_maximum_budget_default)
-        );
-        mBudget = new BigDecimal(budgetString);
-
-        mWarningIsSet = sp.getBoolean(
-                getString(R.string.key_set_warning_checkbox),
-                getResources().getBoolean(R.bool.pref_set_warning_default)
-        );
-
-        mWarningType = sp.getString(
-                getString(R.string.key_warning_type_list),
-                getString(R.string.warn_fixed_price_list_value)
-        );
-
-        String warningValueString = sp.getString(
-                getString(R.string.key_warning_fixed_edit_text),
-                getString(R.string.pref_warning_fixed_default)
-        );
-        mWarningFixedValue = new BigDecimal(warningValueString);
-
-        mWarningPercentage = sp.getInt(
-                getString(R.string.key_warning_percentage_seek_bar),
-                getResources().getInteger(R.integer.pref_warning_percentage_default)
-        );
-
-        mIncludeTax = sp.getBoolean(
-                getString(R.string.key_include_tax_checkbox),
-                getResources().getBoolean(R.bool.pref_include_tax_default)
-        );
-
-        String taxRateString = sp.getString(
-                getString(R.string.key_tax_rate_edit_text),
-                getResources().getString(R.string.pref_tax_rate_default)
-        );
-        mTaxRate = new BigDecimal(taxRateString).multiply(new BigDecimal("0.01"));
-        if (mIncludeTax) {
-            ShoppingListItem.setTaxRate(mTaxRate);
-        } else {
-            ShoppingListItem.setTaxRate(new BigDecimal("0"));
-        }
-
-        mAutocompleteEnabled = sp.getBoolean(
-                getString(R.string.key_enable_autocomplete_checkbox),
-                getResources().getBoolean(R.bool.pref_enable_autocomplete_default)
-        );
-
-        sp.registerOnSharedPreferenceChangeListener(this);
-    }
-
-    private void setupAutocompleteDictionary() {
-        new AsyncTask<Void, Void, String[]>() {
-
-            @Override
-            protected String[] doInBackground(Void... voids) {
-                AutocompleteEntryDao dao = db.autocompleteEntryDao();
-                return dao.getAllEntries().toArray(new String[0]);
-            }
-
-            @Override
-            protected void onPostExecute(String[] autocompleteDictionary) {
-                super.onPostExecute(autocompleteDictionary);
-                mAutocompleteDictionary = autocompleteDictionary;
-            }
-        }.execute();
-    }
-
-    private void updateWarning() {
-        if (mWarningType.equals(getString(R.string.warn_fixed_price_list_value))) {
-            mWarningValue = mWarningFixedValue;
-        } else {
-            mWarningValue = mBudget.multiply(
-                    new BigDecimal(mWarningPercentage)
-                            .multiply(new BigDecimal("0.01")));
-        }
     }
 
     @Override
@@ -260,28 +195,28 @@ public class MainActivity
         super.onDestroy();
         ShoppingListItem[] items =
                 mShoppingListAdapter.getAllItems().toArray(new ShoppingListItem[0]);
-        new StoreItemsTask().execute(items);
+        executeStoreItemsAction(items);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.delete_all:
+            case R.id.option_delete_all:
                 new MaterialDialog.Builder(this)
-                        .title(R.string.delete_all)
-                        .content(R.string.prompt_delete_all)
-                        .positiveText(R.string.confirm_delete_all)
-                        .negativeText(R.string.cancel_delete_all)
+                        .title(R.string.delete_all_dialog_title)
+                        .content(R.string.delete_all_dialog_body)
+                        .positiveText(R.string.delete_all_dialog_positive)
+                        .negativeText(R.string.delete_all_dialog_negative)
                         .onPositive((dialog, which) -> mShoppingListAdapter.deleteAll())
                         .show();
                 return true;
-            case R.id.settings:
+            case R.id.option_settings:
                 Intent startSettingsActivity = new Intent(this, SettingsActivity.class);
                 startActivity(startSettingsActivity);
                 return true;
@@ -293,6 +228,284 @@ public class MainActivity
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(getString(R.string.key_set_maximum_budget_checkbox))) {
+            mBudgetIsSet = sharedPreferences.getBoolean(key,
+                    getResources().getBoolean(R.bool.pref_default_set_budget));
+        } else if (key.equals(getString(R.string.key_maximum_budget_edit_text))) {
+            mBudget = new BigDecimal(sharedPreferences.getString(key,
+                    getResources().getString(R.string.pref_default_maximum_budget)));
+        } else if (key.equals(getString(R.string.key_set_warning_checkbox))) {
+            mWarningIsSet = sharedPreferences.getBoolean(key,
+                    getResources().getBoolean(R.bool.pref_default_set_warning));
+        } else if (key.equals(getString(R.string.key_warning_type_list))) {
+            mWarningType = sharedPreferences.getString(key,
+                    getResources().getString(R.string.pref_value_warn_fixed_price));
+        } else if (key.equals(getString(R.string.key_warning_fixed_edit_text))) {
+            mWarningFixedValue =
+                    new BigDecimal(sharedPreferences.getString(key,
+                            getResources().getString(R.string.pref_default_warning_fixed)));
+        } else if (key.equals(getString(R.string.key_warning_percentage_seek_bar))) {
+            mWarningPercentage = sharedPreferences.getInt(key,
+                    getResources().getInteger(R.integer.pref_default_warning_percentage));
+        } else if (key.equals(getString(R.string.key_include_tax_checkbox))) {
+            mIncludeTax = sharedPreferences.getBoolean(key,
+                    getResources().getBoolean(R.bool.pref_default_include_tax));
+            if (mIncludeTax) {
+                ShoppingListItem.setTaxRate(mTaxRate);
+            } else {
+                ShoppingListItem.setTaxRate(new BigDecimal("0"));
+            }
+        } else if (key.equals(getString(R.string.key_tax_rate_edit_text))) {
+            mTaxRate = new BigDecimal(sharedPreferences.getString(key,
+                    getResources().getString(R.string.pref_default_tax_rate)))
+                    .multiply(new BigDecimal("0.01"));
+            if (mIncludeTax) {
+                ShoppingListItem.setTaxRate(mTaxRate);
+            } else {
+                ShoppingListItem.setTaxRate(new BigDecimal("0"));
+            }
+        } else if (key.equals(getString(R.string.key_enable_autocomplete_checkbox))) {
+            mAutocompleteEnabled = sharedPreferences.getBoolean(key,
+                    getResources().getBoolean(R.bool.pref_default_enable_autocomplete));
+        }
+
+        updateWarning();
+        mShoppingListAdapter.onDataChanged();
+    }
+
+    /**
+     * Shows either the RecyclerView showing the list of items, or an error view if the list is
+     * empty.
+     *
+     * @param listIsEmpty true iff the shopping list is empty
+     */
+    @Override
+    public void switchViews(boolean listIsEmpty) {
+        if (listIsEmpty) {
+            mRecyclerView.setVisibility(View.GONE);
+            mErrorDisplayConstraintLayout.setVisibility(View.VISIBLE);
+        } else {
+            mRecyclerView.setVisibility(View.VISIBLE);
+            mErrorDisplayConstraintLayout.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * Action to be executed when the user clicks on one of the items in the shopping list.
+     *
+     * @param index The position in the shopping list of the item that was clicked.
+     */
+    @Override
+    public void onItemClick(int index) {
+        List<ShoppingListItem> allItems = mShoppingListAdapter.getAllItemsOrderedByStatus();
+        ShoppingListItem item = allItems.get(index);
+        switch (item.getStatus()) {
+            case ShoppingListItem.UNCHECKED:
+                if (item.hasCondition()) {
+                    onConditionedItemClick(item);
+                } else {
+                    onUncheckedItemClick(item);
+                }
+                break;
+            case ShoppingListItem.CHECKED:
+                onCheckedItemClick(item);
+                break;
+            default:
+                onNotBuyingItemClick(item);
+                break;
+        }
+    }
+
+    /**
+     * Sets the total price in the TextView in the footer, and colours it accordingly.
+     *
+     * @param price The price to be set
+     */
+    @Override
+    public void updateTotalPrice(BigDecimal price) {
+        String totalString =
+                getString(R.string.main_activity_placeholder_footer_total, price, mBudget);
+        mTotalPriceTextView.setText(totalString);
+        mOverBudgetTextView.setVisibility(View.GONE);
+
+        if (mBudgetIsSet) {
+            if (price.compareTo(mBudget) > 0) {
+                // i.e. if price > mBudget
+                mTotalPriceTextView.setTextColor(
+                        getResources().getColor(R.color.text_color_price_over_budget));
+                mOverBudgetTextView.setVisibility(View.VISIBLE);
+            } else if (mWarningIsSet && price.compareTo(mWarningValue) > 0) {
+                mTotalPriceTextView.setTextColor(
+                        getResources().getColor(R.color.text_color_price_warning));
+            } else {
+                mTotalPriceTextView.setTextColor(
+                        getResources().getColor(R.color.text_color_price_normal));
+            }
+        }
+    }
+
+    @Override
+    public boolean isTaxIncluded() {
+        return mIncludeTax;
+    }
+
+    @Override
+    public void showFootnotes(boolean optionalItemsExist, boolean conditionedItemsExist) {
+        if (optionalItemsExist || conditionedItemsExist) {
+            mFootnotes.setVisibility(View.VISIBLE);
+            mOptionalTextView.setVisibility(optionalItemsExist ? View.VISIBLE : View.GONE);
+            mConditionTextView.setVisibility(conditionedItemsExist ? View.VISIBLE : View.GONE);
+        } else {
+            mFootnotes.setVisibility(View.GONE);
+        }
+    }
+
+    private void showAddNewItemDialog() {
+        MaterialDialog materialDialog = new MaterialDialog.Builder(this)
+                .title(R.string.add_new_item_dialog_title)
+                .customView(R.layout.dialog_add_new_item, true)
+                .positiveText(R.string.add_new_item_dialog_positive)
+                .negativeText(R.string.add_new_item_dialog_negative)
+                .neutralText(R.string.add_new_item_dialog_neutral)
+                .onPositive(
+                        (dialog, which) -> onPositiveAddNewItem(
+                                addNewItemDialogItemNameEditText.getText().toString(),
+                                addNewItemDialogOptionalCheckBox.isChecked(),
+                                addNewItemDialogConditionEditText.getText().toString(),
+                                addNewItemDialogSaveItemCheckBox.isChecked()
+                        )
+                )
+                .onNeutral(
+                        (dialog, which) -> onNeutralAddNewItem(
+                                addNewItemDialogItemNameEditText.getText().toString(),
+                                addNewItemDialogOptionalCheckBox.isChecked(),
+                                addNewItemDialogConditionEditText.getText().toString(),
+                                addNewItemDialogSaveItemCheckBox.isChecked()
+                        )
+                )
+                .build();
+
+        assert materialDialog.getCustomView() != null;
+        addNewItemDialogItemNameEditText = materialDialog.getCustomView()
+                .findViewById(R.id.item_name_edit_text);
+        addNewItemDialogSaveItemCheckBox = materialDialog.getCustomView()
+                .findViewById(R.id.save_item_check_box);
+        addNewItemDialogOptionalCheckBox = materialDialog.getCustomView()
+                .findViewById(R.id.make_item_optional_check_box);
+        addNewItemDialogConditionEditText = materialDialog.getCustomView()
+                .findViewById(R.id.condition_edit_text);
+
+        ArrayAdapter<String> adapter =
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_dropdown_item_1line,
+                        mAutocompleteEnabled ? mAutocompleteDictionary : new String[0]
+                );
+        addNewItemDialogItemNameEditText.setAdapter(adapter);
+
+        addNewItemDialogPositiveAction = materialDialog.getActionButton(DialogAction.POSITIVE);
+        addNewItemDialogNeutralAction = materialDialog.getActionButton(DialogAction.NEUTRAL);
+        addNewItemDialogPositiveAction.setEnabled(false);
+        addNewItemDialogNeutralAction.setEnabled(false);
+        addNewItemDialogItemNameEditText.addTextChangedListener(
+                new TextWatcher() {
+                    @Override
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                    }
+
+                    @Override
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+                        addNewItemDialogPositiveAction.setEnabled(s.toString().trim().length() > 0);
+                        addNewItemDialogNeutralAction.setEnabled(s.toString().trim().length() > 0);
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable s) {
+                    }
+                }
+        );
+
+        materialDialog.show();
+    }
+
+    private void setupSharedPreferences() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+
+        mBudgetIsSet = sp.getBoolean(
+                getString(R.string.key_set_maximum_budget_checkbox),
+                getResources().getBoolean(R.bool.pref_default_set_budget)
+        );
+
+        String budgetString = sp.getString(
+                getString(R.string.key_maximum_budget_edit_text),
+                getResources().getString(R.string.pref_default_maximum_budget)
+        );
+        mBudget = new BigDecimal(budgetString);
+
+        mWarningIsSet = sp.getBoolean(
+                getString(R.string.key_set_warning_checkbox),
+                getResources().getBoolean(R.bool.pref_default_set_warning)
+        );
+
+        mWarningType = sp.getString(
+                getString(R.string.key_warning_type_list),
+                getString(R.string.pref_value_warn_fixed_price)
+        );
+
+        String warningValueString = sp.getString(
+                getString(R.string.key_warning_fixed_edit_text),
+                getString(R.string.pref_default_warning_fixed)
+        );
+        mWarningFixedValue = new BigDecimal(warningValueString);
+
+        mWarningPercentage = sp.getInt(
+                getString(R.string.key_warning_percentage_seek_bar),
+                getResources().getInteger(R.integer.pref_default_warning_percentage)
+        );
+
+        mIncludeTax = sp.getBoolean(
+                getString(R.string.key_include_tax_checkbox),
+                getResources().getBoolean(R.bool.pref_default_include_tax)
+        );
+
+        String taxRateString = sp.getString(
+                getString(R.string.key_tax_rate_edit_text),
+                getResources().getString(R.string.pref_default_tax_rate)
+        );
+        mTaxRate = new BigDecimal(taxRateString).multiply(new BigDecimal("0.01"));
+        if (mIncludeTax) {
+            ShoppingListItem.setTaxRate(mTaxRate);
+        } else {
+            ShoppingListItem.setTaxRate(new BigDecimal("0"));
+        }
+
+        mAutocompleteEnabled = sp.getBoolean(
+                getString(R.string.key_enable_autocomplete_checkbox),
+                getResources().getBoolean(R.bool.pref_default_enable_autocomplete)
+        );
+
+        sp.registerOnSharedPreferenceChangeListener(this);
+    }
+
+    private void setupAutocompleteDictionary() {
+        new SetupAutocompleteDictionaryTask(this).execute();
+    }
+
+    private void updateWarning() {
+        if (mWarningType.equals(getString(R.string.pref_value_warn_fixed_price))) {
+            mWarningValue = mWarningFixedValue;
+        } else {
+            mWarningValue = mBudget.multiply(
+                    new BigDecimal(mWarningPercentage)
+                            .multiply(new BigDecimal("0.01")));
+        }
+    }
+
+    /**
+     * TODO: When this app is in an acceptable state, remove this method.
+     */
     private void populateListWithDummyData() {
         String[] dummyItemNames = {
                 "Milk",
@@ -333,86 +546,6 @@ public class MainActivity
         }
     }
 
-    @Override
-    public void switchViews(boolean listIsEmpty) {
-        if (listIsEmpty) {
-            mRecyclerView.setVisibility(View.GONE);
-            mErrorDisplay.setVisibility(View.VISIBLE);
-        } else {
-            mRecyclerView.setVisibility(View.VISIBLE);
-            mErrorDisplay.setVisibility(View.GONE);
-        }
-    }
-
-    public void showAddNewItemDialog() {
-        MaterialDialog materialDialog = new MaterialDialog.Builder(this)
-                .title(R.string.add_item_title)
-                .customView(R.layout.shopping_list_dialog, true)
-                .positiveText(R.string.add_another_item)
-                .negativeText(R.string.cancel)
-                .neutralText(R.string.add_this_and_finish)
-                .onPositive(
-                        (dialog, which) -> onPositiveAddNewItem(
-                                itemNameEditText.getText().toString(),
-                                optionalCheckBox.isChecked(),
-                                conditionEditText.getText().toString(),
-                                saveItemCheckBox.isChecked()
-                        )
-                )
-                .onNeutral(
-                        (dialog, which) -> onNeutralAddNewItem(
-                                itemNameEditText.getText().toString(),
-                                optionalCheckBox.isChecked(),
-                                conditionEditText.getText().toString(),
-                                saveItemCheckBox.isChecked()
-                        )
-                )
-                .build();
-
-        itemNameEditText = (AutoCompleteTextView) materialDialog.getCustomView()
-                .findViewById(R.id.item_name_edit_text);
-        saveItemCheckBox = (CheckBox) materialDialog.getCustomView()
-                .findViewById(R.id.save_item_check_box);
-        optionalCheckBox = (CheckBox) materialDialog.getCustomView()
-                .findViewById(R.id.make_item_optional_check_box);
-        conditionEditText = (EditText) materialDialog.getCustomView()
-                .findViewById(R.id.condition_edit_text);
-
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_dropdown_item_1line,
-                        mAutocompleteEnabled ? mAutocompleteDictionary : new String[0]
-                );
-        itemNameEditText.setAdapter(adapter);
-
-        addNewItemPositiveAction = materialDialog.getActionButton(DialogAction.POSITIVE);
-        addNewItemNeutralAction = materialDialog.getActionButton(DialogAction.NEUTRAL);
-        addNewItemPositiveAction.setEnabled(false);
-        addNewItemNeutralAction.setEnabled(false);
-        itemNameEditText.addTextChangedListener(
-                new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                        // do nothing
-                    }
-
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {
-                        addNewItemPositiveAction.setEnabled(s.toString().trim().length() > 0);
-                        addNewItemNeutralAction.setEnabled(s.toString().trim().length() > 0);
-                    }
-
-                    @Override
-                    public void afterTextChanged(Editable s) {
-                        // do nothing
-                    }
-                }
-        );
-
-        materialDialog.show();
-    }
-
     private void addItem(String itemName, boolean optional, String condition, boolean save) {
         ShoppingListItem itemToAdd = new ShoppingListItem(
                 itemName,
@@ -421,23 +554,12 @@ public class MainActivity
         );
         mShoppingListAdapter.addItemToEndOfShoppingList(itemToAdd);
         if (save) {
-            new AsyncTask<String, Void, Void>() {
-                @Override
-                protected Void doInBackground(String... strings) {
-                    AutocompleteEntryDao dao = db.autocompleteEntryDao();
-                    AutocompleteEntry entry = new AutocompleteEntry();
-                    entry.setName(strings[0]);
-                    dao.insertAll(entry);
-                    return null;
-                }
-
-                @Override
-                protected void onPostExecute(Void nothing) {
-                    super.onPostExecute(nothing);
-                    setupAutocompleteDictionary();
-                }
-            }.execute(itemName);
+            executeAddToAutocompleteAction(itemName);
         }
+    }
+
+    private void executeAddToAutocompleteAction(String itemName) {
+        new AddToAutocompleteTask(this).execute(itemName);
     }
 
     private void onPositiveAddNewItem(String itemName, boolean optional, String condition,
@@ -451,27 +573,10 @@ public class MainActivity
         addItem(itemName, optional, condition, save);
     }
 
-    @Override
-    public void onItemClick(int index) {
-        List<ShoppingListItem> allItems = mShoppingListAdapter.getAllItemsOrderedByStatus();
-        ShoppingListItem item = allItems.get(index);
-        if (item.getStatus() == ShoppingListItem.UNCHECKED) {
-            if (item.hasCondition()) {
-                onConditionedItemClick(item);
-            } else {
-                onUncheckedItemClick(item);
-            }
-        } else if (item.getStatus() == ShoppingListItem.CHECKED) {
-            onCheckedItemClick(item);
-        } else {
-            onNotBuyingItemClick(item);
-        }
-    }
-
     /**
      * Precondition: item.hasCondition() must be true
      *
-     * @param item The shopping list item, with a non-null, nonempty comdition
+     * @param item The shopping list item, with a non-null, nonempty condition
      */
     private void onConditionedItemClick(ShoppingListItem item) {
         if (!item.hasCondition()) {
@@ -481,91 +586,98 @@ public class MainActivity
         MaterialDialog dialog = new MaterialDialog.Builder(this)
                 .title(item.getItemName())
                 .customView(R.layout.dialog_conditioned_item, true)
-                .positiveText(R.string.yes)
-                .negativeText(R.string.no)
-                .neutralText(R.string.not_buying)
+                .positiveText(R.string.item_dialog_condition_positive)
+                .negativeText(R.string.item_dialog_condition_negative)
+                .neutralText(R.string.item_dialog_unchecked_neutral)
                 .onPositive((d, which) -> onUncheckedItemClick(item))
-                .onNeutral(new UncheckedItemClickNeutralActionCallback())
+                .onNeutral((d, which) -> {
+                    item.setStatus(ShoppingListItem.NOT_BUYING);
+                    mShoppingListAdapter.onDataChanged();
+                })
                 .build();
         View view = dialog.getCustomView();
-        conditionTextView = view.findViewById(R.id.tv_item_condition);
+        assert view != null;
+        TextView conditionTextView = view.findViewById(R.id.tv_item_condition);
         conditionTextView.setText(item.getCondition());
         dialog.show();
     }
 
     private void onUncheckedItemClick(ShoppingListItem item) {
-        currentItem = item;
-        currentItemQuantity = 0;
+        itemDialogCurrentItem = item;
+        itemDialogCurrentItemQuantity = 0;
         MaterialDialog itemBuyingDialog = new MaterialDialog.Builder(this)
                 .title(item.getItemName())
-                .customView(R.layout.buying_item_dialog, true)
-                .positiveText(R.string.confirm)
-                .neutralText(R.string.not_buying)
-                .negativeText(R.string.cancel)
+                .customView(R.layout.dialog_buying_item, true)
+                .positiveText(R.string.item_dialog_unchecked_positive)
+                .neutralText(R.string.item_dialog_unchecked_neutral)
+                .negativeText(R.string.item_dialog_unchecked_negative)
                 .onPositive(new UncheckedItemClickPositiveActionCallback())
                 .onNeutral(new UncheckedItemClickNeutralActionCallback())
                 .build();
         View view = itemBuyingDialog.getCustomView();
-        itemPositiveAction = itemBuyingDialog.getActionButton(DialogAction.POSITIVE);
+        itemDialogPositiveAction = itemBuyingDialog.getActionButton(DialogAction.POSITIVE);
 
-        pricingRadioGroup = view.findViewById(R.id.pricing_radio_group);
-        perUnitRadioButton = view.findViewById(R.id.per_unit);
-        perKgRadioButton = view.findViewById(R.id.per_kg);
-        perLbRadioButton = view.findViewById(R.id.per_pound);
-        priceTitleTextView = view.findViewById(R.id.price_title);
-        ifPerUnitSelectedLayout = view.findViewById(R.id.if_per_unit_selected);
-        ifPerKilogramSelectedLayout = view.findViewById(R.id.if_per_kg_selected);
-        ifPerPoundSelectedLayout = view.findViewById(R.id.if_per_lb_selected);
-        priceEditText = view.findViewById(R.id.price);
-        decreaseQuantityImageButton = view.findViewById(R.id.decrease_quantity_button);
-        increaseQuantityImageButton = view.findViewById(R.id.increase_quantity_button);
-        quantityTextView = view.findViewById(R.id.quantity);
-        kilogramsEditText = view.findViewById(R.id.kg);
-        poundsEditText = view.findViewById(R.id.lb);
-        ouncesEditText = view.findViewById(R.id.oz);
-        totalItemPriceNoTaxTextView = view.findViewById(R.id.total_item_price_no_tax_text_view);
-        taxTextView = view.findViewById(R.id.tax_text_view);
-        totalItemPriceTextView = view.findViewById(R.id.total_item_price_text_view);
-        priceWithoutTaxLinearLayout = view.findViewById(R.id.total_price_no_tax_linear_layout);
-        taxLinearLayout = view.findViewById(R.id.tax_linear_layout);
+        assert view != null;
+        itemDialogPricingRadioGroup = view.findViewById(R.id.radio_group_pricing);
+        itemDialogPerUnitRadioButton = view.findViewById(R.id.rb_per_unit);
+        itemDialogPerKgRadioButton = view.findViewById(R.id.rb_per_kg);
+        itemDialogPerLbRadioButton = view.findViewById(R.id.rb_per_pound);
+        itemDialogPriceTitleTextView = view.findViewById(R.id.tv_price_title);
+        itemDialogIfPerUnitSelectedLayout = view.findViewById(R.id.ll_if_per_unit_selected);
+        itemDialogIfPerKilogramSelectedLayout = view.findViewById(R.id.ll_if_per_kg_selected);
+        itemDialogIfPerPoundSelectedLayout = view.findViewById(R.id.ll_if_per_lb_selected);
+        itemDialogPriceEditText = view.findViewById(R.id.et_price);
+        itemDialogDecreaseQuantityImageButton = view.findViewById(R.id.btn_decrease_quantity);
+        itemDialogIncreaseQuantityImageButton = view.findViewById(R.id.btn_increase_quantity);
+        itemDialogQuantityTextView = view.findViewById(R.id.tv_quantity);
+        itemDialogKilogramsEditText = view.findViewById(R.id.et_kg);
+        itemDialogPoundsEditText = view.findViewById(R.id.et_lb);
+        itemDialogOuncesEditText = view.findViewById(R.id.et_oz);
+        itemDialogTotalItemPriceNoTaxTextView =
+                view.findViewById(R.id.tv_total_item_price_no_tax);
+        itemDialogTaxTextView = view.findViewById(R.id.tv_tax);
+        itemDialogTotalItemPriceTextView = view.findViewById(R.id.tv_total_item_price);
+        itemDialogPriceWithoutTaxLinearLayout =
+                view.findViewById(R.id.ll_total_price_no_tax);
+        itemDialogTaxLinearLayout = view.findViewById(R.id.ll_tax);
 
         if (!mIncludeTax) {
-            priceWithoutTaxLinearLayout.setVisibility(View.GONE);
-            taxLinearLayout.setVisibility(View.GONE);
+            itemDialogPriceWithoutTaxLinearLayout.setVisibility(View.GONE);
+            itemDialogTaxLinearLayout.setVisibility(View.GONE);
         }
 
-        itemPositiveAction.setEnabled(false);  // User needs to add the proper values first
+        itemDialogPositiveAction.setEnabled(false);  // User needs to add the proper values first
 
-        whichRadioButtonChecked = R.id.per_unit;    // This is the default checked radio button
+        itemDialogWhichRadioButtonChecked = R.id.rb_per_unit;  // This is the default one
 
-        pricingRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            whichRadioButtonChecked = checkedId;
+        itemDialogPricingRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            itemDialogWhichRadioButtonChecked = checkedId;
             switch (checkedId) {
-                case R.id.per_unit:
-                    ifPerUnitSelectedLayout.setVisibility(View.VISIBLE);
-                    ifPerKilogramSelectedLayout.setVisibility(View.GONE);
-                    ifPerPoundSelectedLayout.setVisibility(View.GONE);
-                    priceTitleTextView.setText(R.string.price_per_unit);
+                case R.id.rb_per_unit:
+                    itemDialogIfPerUnitSelectedLayout.setVisibility(View.VISIBLE);
+                    itemDialogIfPerKilogramSelectedLayout.setVisibility(View.GONE);
+                    itemDialogIfPerPoundSelectedLayout.setVisibility(View.GONE);
+                    itemDialogPriceTitleTextView.setText(R.string.price_per_unit);
                     updateDialog();
                     break;
-                case R.id.per_kg:
-                    ifPerUnitSelectedLayout.setVisibility(View.GONE);
-                    ifPerKilogramSelectedLayout.setVisibility(View.VISIBLE);
-                    ifPerPoundSelectedLayout.setVisibility(View.GONE);
-                    priceTitleTextView.setText(R.string.price_per_kg);
+                case R.id.rb_per_kg:
+                    itemDialogIfPerUnitSelectedLayout.setVisibility(View.GONE);
+                    itemDialogIfPerKilogramSelectedLayout.setVisibility(View.VISIBLE);
+                    itemDialogIfPerPoundSelectedLayout.setVisibility(View.GONE);
+                    itemDialogPriceTitleTextView.setText(R.string.price_per_kg);
                     updateDialog();
                     break;
-                case R.id.per_pound:
-                    ifPerUnitSelectedLayout.setVisibility(View.GONE);
-                    ifPerKilogramSelectedLayout.setVisibility(View.GONE);
-                    ifPerPoundSelectedLayout.setVisibility(View.VISIBLE);
-                    priceTitleTextView.setText(R.string.price_per_lb);
+                case R.id.rb_per_pound:
+                    itemDialogIfPerUnitSelectedLayout.setVisibility(View.GONE);
+                    itemDialogIfPerKilogramSelectedLayout.setVisibility(View.GONE);
+                    itemDialogIfPerPoundSelectedLayout.setVisibility(View.VISIBLE);
+                    itemDialogPriceTitleTextView.setText(R.string.price_per_lb);
                     updateDialog();
                     break;
             }
         });
 
-        priceEditText.addTextChangedListener(
+        itemDialogPriceEditText.addTextChangedListener(
                 new TextWatcher() {
                     @Override
                     public void beforeTextChanged(CharSequence s, int start, int count,
@@ -593,51 +705,46 @@ public class MainActivity
     }
 
     private void updateDialog() {
-        quantityTextView.setText("" + currentItemQuantity);
-        if (!TextUtils.isEmpty(priceEditText.getText())) {
-            BigDecimal pricePerUnit = new BigDecimal(priceEditText.getText().toString());
+        String quantityString = Integer.toString(itemDialogCurrentItemQuantity);
+        itemDialogQuantityTextView.setText(quantityString);
+        if (!TextUtils.isEmpty(itemDialogPriceEditText.getText())) {
+            BigDecimal pricePerUnit = new BigDecimal(itemDialogPriceEditText.getText().toString());
             BigDecimal totalPriceWithoutTax, tax, totalPrice;
-            switch (whichRadioButtonChecked) {
-                case R.id.per_unit:
-                    if (currentItemQuantity >= 1) {
-                        itemPositiveAction.setEnabled(true);
+            totalPriceWithoutTax = tax = totalPrice = null;
+            switch (itemDialogWhichRadioButtonChecked) {
+                case R.id.rb_per_unit:
+                    if (itemDialogCurrentItemQuantity >= 1) {
+                        itemDialogPositiveAction.setEnabled(true);
                         totalPriceWithoutTax =
-                                pricePerUnit.multiply(new BigDecimal(currentItemQuantity));
+                                pricePerUnit.multiply(
+                                        new BigDecimal(itemDialogCurrentItemQuantity));
                         tax = ShoppingListItem.getTax(totalPriceWithoutTax);
                         totalPrice = ShoppingListItem.getTaxAdjustedPrice(totalPriceWithoutTax);
-                        totalItemPriceNoTaxTextView.setText("$" +
-                                totalPriceWithoutTax.setScale(2, RoundingMode.HALF_UP));
-                        taxTextView.setText("+ $" + tax.setScale(2, RoundingMode.HALF_UP));
-                        totalItemPriceTextView.setText("$" +
-                                totalPrice.setScale(2, RoundingMode.HALF_UP));
                     } else {
-                        itemPositiveAction.setEnabled(false);
+                        itemDialogPositiveAction.setEnabled(false);
                     }
                     break;
-                case R.id.per_kg:
-                    if (!TextUtils.isEmpty(kilogramsEditText.getText())) {
-                        itemPositiveAction.setEnabled(true);
+                case R.id.rb_per_kg:
+                    if (!TextUtils.isEmpty(itemDialogKilogramsEditText.getText())) {
+                        itemDialogPositiveAction.setEnabled(true);
                         BigDecimal kilograms =
-                                new BigDecimal(kilogramsEditText.getText().toString());
+                                new BigDecimal(itemDialogKilogramsEditText.getText().toString());
                         totalPriceWithoutTax = pricePerUnit.multiply(kilograms);
                         tax = ShoppingListItem.getTax(totalPriceWithoutTax);
                         totalPrice = ShoppingListItem.getTaxAdjustedPrice(totalPriceWithoutTax);
-                        totalItemPriceNoTaxTextView.setText("$" +
-                                totalPriceWithoutTax.setScale(2, RoundingMode.HALF_UP));
-                        taxTextView.setText("+ $" + tax.setScale(2, RoundingMode.HALF_UP));
-                        totalItemPriceTextView.setText("$" +
-                                totalPrice.setScale(2, RoundingMode.HALF_UP));
                     } else {
-                        itemPositiveAction.setEnabled(false);
+                        itemDialogPositiveAction.setEnabled(false);
                     }
                     break;
-                case R.id.per_pound:
-                    if (!TextUtils.isEmpty(poundsEditText.getText())) {
-                        itemPositiveAction.setEnabled(true);
-                        BigDecimal pounds = new BigDecimal(poundsEditText.getText().toString());
+                case R.id.rb_per_pound:
+                    if (!TextUtils.isEmpty(itemDialogPoundsEditText.getText())) {
+                        itemDialogPositiveAction.setEnabled(true);
+                        BigDecimal pounds =
+                                new BigDecimal(itemDialogPoundsEditText.getText().toString());
                         int ounces;
-                        if (!TextUtils.isEmpty(ouncesEditText.getText())) {
-                            ounces = Integer.parseInt(ouncesEditText.getText().toString());
+                        if (!TextUtils.isEmpty(itemDialogOuncesEditText.getText())) {
+                            ounces =
+                                    Integer.parseInt(itemDialogOuncesEditText.getText().toString());
                         } else {
                             ounces = 0;
                         }
@@ -647,37 +754,43 @@ public class MainActivity
                         totalPriceWithoutTax = pricePerKilogram.multiply(kilograms);
                         tax = ShoppingListItem.getTax(totalPriceWithoutTax);
                         totalPrice = ShoppingListItem.getTaxAdjustedPrice(totalPriceWithoutTax);
-                        totalItemPriceNoTaxTextView.setText("$" +
-                                totalPriceWithoutTax.setScale(2, RoundingMode.HALF_UP));
-                        taxTextView.setText("+ $" + tax.setScale(2, RoundingMode.HALF_UP));
-                        totalItemPriceTextView.setText("$" +
-                                totalPrice.setScale(2, RoundingMode.HALF_UP));
                     } else {
-                        itemPositiveAction.setEnabled(false);
+                        itemDialogPositiveAction.setEnabled(false);
                     }
                     break;
             }
+            if (totalPriceWithoutTax != null) {
+                String totalPriceNoTaxString =
+                        getString(R.string.item_dialog_placeholder_total_price_no_tax,
+                                totalPriceWithoutTax);
+                String taxString = getString(R.string.item_dialog_placeholder_tax, tax);
+                String totalPriceString =
+                        getString(R.string.item_dialog_placeholder_total_price, totalPrice);
+                itemDialogTotalItemPriceNoTaxTextView.setText(totalPriceNoTaxString);
+                itemDialogTaxTextView.setText(taxString);
+                itemDialogTotalItemPriceTextView.setText(totalPriceString);
+            }
         } else {
-            itemPositiveAction.setEnabled(false);
+            itemDialogPositiveAction.setEnabled(false);
         }
     }
 
     private void perUnitUncheckedSetup() {
-        decreaseQuantityImageButton.setOnClickListener((v) -> {
-            currentItemQuantity--;
-            decreaseQuantityImageButton.setEnabled(currentItemQuantity > 0);
+        itemDialogDecreaseQuantityImageButton.setOnClickListener((v) -> {
+            itemDialogCurrentItemQuantity--;
+            itemDialogDecreaseQuantityImageButton.setEnabled(itemDialogCurrentItemQuantity > 0);
             updateDialog();
         });
 
-        increaseQuantityImageButton.setOnClickListener((v) -> {
-            currentItemQuantity++;
-            decreaseQuantityImageButton.setEnabled(currentItemQuantity > 0);
+        itemDialogIncreaseQuantityImageButton.setOnClickListener((v) -> {
+            itemDialogCurrentItemQuantity++;
+            itemDialogDecreaseQuantityImageButton.setEnabled(itemDialogCurrentItemQuantity > 0);
             updateDialog();
         });
     }
 
     private void perKgUncheckedSetup() {
-        kilogramsEditText.addTextChangedListener(new TextWatcher() {
+        itemDialogKilogramsEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -694,7 +807,7 @@ public class MainActivity
     }
 
     private void perLbUncheckedSetup() {
-        poundsEditText.addTextChangedListener(new TextWatcher() {
+        itemDialogPoundsEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -709,7 +822,7 @@ public class MainActivity
             }
         });
 
-        ouncesEditText.addTextChangedListener(new TextWatcher() {
+        itemDialogOuncesEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -726,129 +839,138 @@ public class MainActivity
     }
 
     private void onCheckedItemClick(ShoppingListItem item) {
-        currentItem = item;
-        currentItemQuantity = item.getQuantity();
+        itemDialogCurrentItem = item;
+        itemDialogCurrentItemQuantity = item.getQuantity();
         MaterialDialog materialDialog = new MaterialDialog.Builder(this)
                 .title(item.getItemName())
-                .customView(R.layout.buying_item_dialog, true)
-                .positiveText(R.string.save_changes)
-                .neutralText(R.string.move_to_top)
-                .negativeText(R.string.cancel)
+                .customView(R.layout.dialog_buying_item, true)
+                .positiveText(R.string.item_dialog_checked_positive)
+                .neutralText(R.string.item_dialog_checked_neutral)
+                .negativeText(R.string.item_dialog_checked_negative)
                 .onPositive(new CheckedItemClickPositiveActionCallback())
                 .onNeutral(new CheckedItemClickNeutralActionCallback())
                 .build();
         View view = materialDialog.getCustomView();
-        itemPositiveAction = materialDialog.getActionButton(DialogAction.POSITIVE);
+        itemDialogPositiveAction = materialDialog.getActionButton(DialogAction.POSITIVE);
 
-        pricingRadioGroup = view.findViewById(R.id.pricing_radio_group);
-        perUnitRadioButton = view.findViewById(R.id.per_unit);
-        perKgRadioButton = view.findViewById(R.id.per_kg);
-        perLbRadioButton = view.findViewById(R.id.per_pound);
-        priceTitleTextView = view.findViewById(R.id.price_title);
-        ifPerUnitSelectedLayout = view.findViewById(R.id.if_per_unit_selected);
-        ifPerKilogramSelectedLayout = view.findViewById(R.id.if_per_kg_selected);
-        ifPerPoundSelectedLayout = view.findViewById(R.id.if_per_lb_selected);
-        priceEditText = view.findViewById(R.id.price);
-        decreaseQuantityImageButton = view.findViewById(R.id.decrease_quantity_button);
-        increaseQuantityImageButton = view.findViewById(R.id.increase_quantity_button);
-        quantityTextView = view.findViewById(R.id.quantity);
-        kilogramsEditText = view.findViewById(R.id.kg);
-        poundsEditText = view.findViewById(R.id.lb);
-        ouncesEditText = view.findViewById(R.id.oz);
-        totalItemPriceNoTaxTextView = view.findViewById(R.id.total_item_price_no_tax_text_view);
-        taxTextView = view.findViewById(R.id.tax_text_view);
-        totalItemPriceTextView = view.findViewById(R.id.total_item_price_text_view);
-        priceWithoutTaxLinearLayout = view.findViewById(R.id.total_price_no_tax_linear_layout);
-        taxLinearLayout = view.findViewById(R.id.tax_linear_layout);
+        assert view != null;
+        itemDialogPricingRadioGroup = view.findViewById(R.id.radio_group_pricing);
+        itemDialogPerUnitRadioButton = view.findViewById(R.id.rb_per_unit);
+        itemDialogPerKgRadioButton = view.findViewById(R.id.rb_per_kg);
+        itemDialogPerLbRadioButton = view.findViewById(R.id.rb_per_pound);
+        itemDialogPriceTitleTextView = view.findViewById(R.id.tv_price_title);
+        itemDialogIfPerUnitSelectedLayout = view.findViewById(R.id.ll_if_per_unit_selected);
+        itemDialogIfPerKilogramSelectedLayout = view.findViewById(R.id.ll_if_per_kg_selected);
+        itemDialogIfPerPoundSelectedLayout = view.findViewById(R.id.ll_if_per_lb_selected);
+        itemDialogPriceEditText = view.findViewById(R.id.et_price);
+        itemDialogDecreaseQuantityImageButton = view.findViewById(R.id.btn_decrease_quantity);
+        itemDialogIncreaseQuantityImageButton = view.findViewById(R.id.btn_increase_quantity);
+        itemDialogQuantityTextView = view.findViewById(R.id.tv_quantity);
+        itemDialogKilogramsEditText = view.findViewById(R.id.et_kg);
+        itemDialogPoundsEditText = view.findViewById(R.id.et_lb);
+        itemDialogOuncesEditText = view.findViewById(R.id.et_oz);
+        itemDialogTotalItemPriceNoTaxTextView = view.findViewById(R.id.tv_total_item_price_no_tax);
+        itemDialogTaxTextView = view.findViewById(R.id.tv_tax);
+        itemDialogTotalItemPriceTextView = view.findViewById(R.id.tv_total_item_price);
+        itemDialogPriceWithoutTaxLinearLayout = view.findViewById(R.id.ll_total_price_no_tax);
+        itemDialogTaxLinearLayout = view.findViewById(R.id.ll_tax);
 
         if (!mIncludeTax) {
-            priceWithoutTaxLinearLayout.setVisibility(View.GONE);
-            taxLinearLayout.setVisibility(View.GONE);
+            itemDialogPriceWithoutTaxLinearLayout.setVisibility(View.GONE);
+            itemDialogTaxLinearLayout.setVisibility(View.GONE);
         }
 
         if (item.isPerUnitOrPerWeight() == ShoppingListItem.PER_UNIT) {
-            perKgRadioButton.setEnabled(false);
-            perLbRadioButton.setEnabled(false);
-            whichRadioButtonChecked = R.id.per_unit;
+            itemDialogPerKgRadioButton.setEnabled(false);
+            itemDialogPerLbRadioButton.setEnabled(false);
+            itemDialogWhichRadioButtonChecked = R.id.rb_per_unit;
             perUnitCheckedSetup(item);
         } else {
-            ifPerUnitSelectedLayout.setVisibility(View.GONE);
-            ifPerKilogramSelectedLayout.setVisibility(View.VISIBLE);
+            itemDialogIfPerUnitSelectedLayout.setVisibility(View.GONE);
+            itemDialogIfPerKilogramSelectedLayout.setVisibility(View.VISIBLE);
 
-            perUnitRadioButton.setEnabled(false);
-            perUnitRadioButton.setChecked(false);
-            perKgRadioButton.setChecked(true);
-            whichRadioButtonChecked = R.id.per_kg;
+            itemDialogPerUnitRadioButton.setEnabled(false);
+            itemDialogPerUnitRadioButton.setChecked(false);
+            itemDialogPerKgRadioButton.setChecked(true);
+            itemDialogWhichRadioButtonChecked = R.id.rb_per_kg;
             perKgCheckedSetup(item);
             perLbCheckedSetup(item);
         }
 
-        pricingRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            whichRadioButtonChecked = checkedId;
+        itemDialogPricingRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            itemDialogWhichRadioButtonChecked = checkedId;
             switch (checkedId) {
-                case R.id.per_unit:
-                    ifPerUnitSelectedLayout.setVisibility(View.VISIBLE);
-                    ifPerKilogramSelectedLayout.setVisibility(View.GONE);
-                    ifPerPoundSelectedLayout.setVisibility(View.GONE);
-                    priceTitleTextView.setText(R.string.price_per_unit);
+                case R.id.rb_per_unit:
+                    itemDialogIfPerUnitSelectedLayout.setVisibility(View.VISIBLE);
+                    itemDialogIfPerKilogramSelectedLayout.setVisibility(View.GONE);
+                    itemDialogIfPerPoundSelectedLayout.setVisibility(View.GONE);
+                    itemDialogPriceTitleTextView.setText(R.string.price_per_unit);
                     updateDialog();
                     break;
-                case R.id.per_kg:
-                    ifPerUnitSelectedLayout.setVisibility(View.GONE);
-                    ifPerKilogramSelectedLayout.setVisibility(View.VISIBLE);
-                    ifPerPoundSelectedLayout.setVisibility(View.GONE);
-                    priceTitleTextView.setText(R.string.price_per_kg);
-                    BigDecimal pricePerPound = new BigDecimal(priceEditText.getText().toString());
-                    if (!TextUtils.isEmpty(priceEditText.getText())) {
-                        priceEditText.setText(
-                                ShoppingListItem.getPricePerKilogram(pricePerPound)
-                                        .setScale(2, RoundingMode.HALF_UP)
-                                        .toString()
-                        );
+                case R.id.rb_per_kg:
+                    itemDialogIfPerUnitSelectedLayout.setVisibility(View.GONE);
+                    itemDialogIfPerKilogramSelectedLayout.setVisibility(View.VISIBLE);
+                    itemDialogIfPerPoundSelectedLayout.setVisibility(View.GONE);
+                    itemDialogPriceTitleTextView.setText(R.string.price_per_kg);
+                    BigDecimal pricePerPound =
+                            new BigDecimal(itemDialogPriceEditText.getText().toString());
+                    if (!TextUtils.isEmpty(itemDialogPriceEditText.getText())) {
+                        String prefill =
+                                getString(R.string.item_dialog_placeholder_price_edit_text,
+                                        ShoppingListItem.getPricePerKilogram(pricePerPound));
+                        itemDialogPriceEditText.setText(prefill);
                     }
-                    if (!TextUtils.isEmpty(poundsEditText.getText()) && weightWasChanged) {
-                        BigDecimal pounds = new BigDecimal(poundsEditText.getText().toString());
+                    if (!TextUtils.isEmpty(itemDialogPoundsEditText.getText()) && itemDialogWeightWasChanged) {
+                        BigDecimal pounds = new BigDecimal(itemDialogPoundsEditText.getText().toString());
                         int ounces;
                         try {
-                            ounces = Integer.parseInt(ouncesEditText.getText().toString());
+                            ounces = Integer.parseInt(itemDialogOuncesEditText.getText().toString());
                         } catch (NumberFormatException e) {
                             ounces = 0;
                         }
                         BigDecimal kilograms = ShoppingListItem.poundsToKilograms(pounds, ounces);
-                        kilogramsEditText.setText(
-                                kilograms.setScale(3, RoundingMode.HALF_UP).toString());
-                        weightWasChanged = false;
+
+                        // Need to use DecimalFormat to strip trailing zeros
+                        String format =
+                                getString(R.string.item_dialog_decimal_format_weight_edit_text);
+                        DecimalFormat df = new DecimalFormat(format);
+                        itemDialogKilogramsEditText.setText(df.format(kilograms));
+                        itemDialogWeightWasChanged = false;
                     }
                     updateDialog();
                     break;
-                case R.id.per_pound:
-                    ifPerUnitSelectedLayout.setVisibility(View.GONE);
-                    ifPerKilogramSelectedLayout.setVisibility(View.GONE);
-                    ifPerPoundSelectedLayout.setVisibility(View.VISIBLE);
-                    priceTitleTextView.setText(R.string.price_per_lb);
+                case R.id.rb_per_pound:
+                    itemDialogIfPerUnitSelectedLayout.setVisibility(View.GONE);
+                    itemDialogIfPerKilogramSelectedLayout.setVisibility(View.GONE);
+                    itemDialogIfPerPoundSelectedLayout.setVisibility(View.VISIBLE);
+                    itemDialogPriceTitleTextView.setText(R.string.price_per_lb);
                     BigDecimal pricePerKilogram = new BigDecimal(
-                            priceEditText.getText().toString());
-                    if (!TextUtils.isEmpty(priceEditText.getText())) {
-                        priceEditText.setText(
-                                ShoppingListItem.getPricePerPound(pricePerKilogram)
-                                        .setScale(2, RoundingMode.HALF_UP)
-                                        .toString()
-                        );
+                            itemDialogPriceEditText.getText().toString());
+                    if (!TextUtils.isEmpty(itemDialogPriceEditText.getText())) {
+                        String format =
+                                getString(R.string.item_dialog_decimal_format_weight_edit_text);
+                        DecimalFormat df = new DecimalFormat(format);
+                        itemDialogPriceEditText.setText(
+                                df.format(ShoppingListItem.getPricePerPound(pricePerKilogram)));
                     }
-                    if (!TextUtils.isEmpty(kilogramsEditText.getText()) && weightWasChanged) {
+                    if (!TextUtils.isEmpty(itemDialogKilogramsEditText.getText()) && itemDialogWeightWasChanged) {
                         BigDecimal kilograms =
-                                new BigDecimal(kilogramsEditText.getText().toString());
+                                new BigDecimal(itemDialogKilogramsEditText.getText().toString());
                         BigDecimal pounds = ShoppingListItem.kilogramsToPounds(kilograms);
-                        poundsEditText.setText(pounds.setScale(3, RoundingMode.HALF_UP).toString());
-                        ouncesEditText.setText("");
-                        weightWasChanged = false;
+
+                        String format =
+                                getString(R.string.item_dialog_decimal_format_weight_edit_text);
+                        DecimalFormat df = new DecimalFormat(format);
+                        itemDialogPoundsEditText.setText(df.format(pounds));
+                        itemDialogOuncesEditText.setText("");
+                        itemDialogWeightWasChanged = false;
                     }
                     updateDialog();
                     break;
             }
         });
 
-        priceEditText.addTextChangedListener(
+        itemDialogPriceEditText.addTextChangedListener(
                 new TextWatcher() {
                     @Override
                     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -857,8 +979,8 @@ public class MainActivity
                     @Override
                     public void onTextChanged(CharSequence pricePerUnit, int start, int before,
                                               int count) {
-                        itemPositiveAction.setEnabled(
-                                !TextUtils.isEmpty(pricePerUnit) && currentItemQuantity >= 1);
+                        itemDialogPositiveAction.setEnabled(
+                                !TextUtils.isEmpty(pricePerUnit) && itemDialogCurrentItemQuantity >= 1);
                         updateDialog();
                     }
 
@@ -874,34 +996,42 @@ public class MainActivity
     }
 
     private void perUnitCheckedSetup(ShoppingListItem item) {
-        priceEditText.setText(item.getPricePerUnit().toString());
+        String prefill =
+                getString(R.string.item_dialog_placeholder_price_edit_text, item.getPricePerUnit());
+        itemDialogPriceEditText.setText(prefill);
 
-        decreaseQuantityImageButton.setOnClickListener(v -> {
-            currentItemQuantity--;
-            decreaseQuantityImageButton.setEnabled(currentItemQuantity > 0);
+        itemDialogDecreaseQuantityImageButton.setOnClickListener(v -> {
+            itemDialogCurrentItemQuantity--;
+            itemDialogDecreaseQuantityImageButton.setEnabled(itemDialogCurrentItemQuantity > 0);
             updateDialog();
         });
 
-        increaseQuantityImageButton.setOnClickListener(v -> {
-            currentItemQuantity++;
-            decreaseQuantityImageButton.setEnabled(currentItemQuantity > 0);
+        itemDialogIncreaseQuantityImageButton.setOnClickListener(v -> {
+            itemDialogCurrentItemQuantity++;
+            itemDialogDecreaseQuantityImageButton.setEnabled(itemDialogCurrentItemQuantity > 0);
             updateDialog();
         });
     }
 
     private void perKgCheckedSetup(ShoppingListItem item) {
-        priceEditText.setText(item.getPricePerUnit().toString());
-        kilogramsEditText.setText(
-                item.getWeightInKilograms().setScale(3, RoundingMode.HALF_UP).toString());
+        String prefill =
+                getString(R.string.item_dialog_placeholder_price_edit_text, item.getPricePerUnit());
+        itemDialogPriceEditText.setText(prefill);
 
-        kilogramsEditText.addTextChangedListener(new TextWatcher() {
+        // Need to use DecimalFormat to strip trailing zeros
+        String format =
+                getString(R.string.item_dialog_decimal_format_weight_edit_text);
+        DecimalFormat df = new DecimalFormat(format);
+        itemDialogKilogramsEditText.setText(df.format(item.getWeightInKilograms()));
+
+        itemDialogKilogramsEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
 
             @Override
             public void onTextChanged(CharSequence kg, int start, int before, int count) {
-                weightWasChanged = true;
+                itemDialogWeightWasChanged = true;
                 updateDialog();
             }
 
@@ -912,17 +1042,19 @@ public class MainActivity
     }
 
     private void perLbCheckedSetup(ShoppingListItem item) {
-        poundsEditText.setText(
-                item.getWeightInPounds().setScale(3, RoundingMode.HALF_UP).toString());
+        String format =
+                getString(R.string.item_dialog_decimal_format_weight_edit_text);
+        DecimalFormat df = new DecimalFormat(format);
+        itemDialogPoundsEditText.setText(df.format(item.getWeightInPounds()));
 
-        poundsEditText.addTextChangedListener(new TextWatcher() {
+        itemDialogPoundsEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
 
             @Override
             public void onTextChanged(CharSequence pounds, int start, int before, int count) {
-                weightWasChanged = true;
+                itemDialogWeightWasChanged = true;
                 updateDialog();
             }
 
@@ -931,14 +1063,14 @@ public class MainActivity
             }
         });
 
-        ouncesEditText.addTextChangedListener(new TextWatcher() {
+        itemDialogOuncesEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
 
             @Override
             public void onTextChanged(CharSequence ounces, int start, int before, int count) {
-                weightWasChanged = true;
+                itemDialogWeightWasChanged = true;
                 updateDialog();
             }
 
@@ -951,9 +1083,9 @@ public class MainActivity
     private void onNotBuyingItemClick(ShoppingListItem item) {
         new MaterialDialog.Builder(this)
                 .title(item.getItemName())
-                .content(R.string.prompt_restore)
-                .positiveText(R.string.confirm_restore)
-                .negativeText(R.string.cancel_restore)
+                .content(R.string.item_dialog_not_buying_body)
+                .positiveText(R.string.item_dialog_not_buying_positive)
+                .negativeText(R.string.item_dialog_not_buying_negative)
                 .onPositive((dialog, which) -> {
                     item.setStatus(ShoppingListItem.UNCHECKED);
                     mShoppingListAdapter.onDataChanged();
@@ -961,114 +1093,80 @@ public class MainActivity
                 .show();
     }
 
-    /**
-     * Sets the total price in the textview.
-     * TODO: Add limit, colouring, and everything else
-     *
-     * @param price
-     */
-    public void updateTotalPrice(BigDecimal price) {
-        String priceString = "$" + price.setScale(2, RoundingMode.HALF_UP);
-        String budgetString = mBudgetIsSet ?
-                " / $" + mBudget.setScale(2, RoundingMode.HALF_UP) :
-                "";
-        mTotalPriceTextView.setText(priceString + budgetString);
-        mOverBudgetTextView.setVisibility(View.GONE);
+    private void executeRetrieveItemsAction() {
+        new RetrieveItemsTask(this).execute();
+    }
 
-        if (mBudgetIsSet) {
-            if (price.compareTo(mBudget) > 0) {
-                // i.e. if price > mBudget
-                mTotalPriceTextView.setTextColor(
-                        getResources().getColor(R.color.text_color_price_over_budget));
-                mOverBudgetTextView.setVisibility(View.VISIBLE);
-            } else if (mWarningIsSet && price.compareTo(mWarningValue) > 0) {
-                mTotalPriceTextView.setTextColor(
-                        getResources().getColor(R.color.text_color_price_warning));
-            } else {
-                mTotalPriceTextView.setTextColor(
-                        getResources().getColor(R.color.text_color_price_normal));
-            }
+    private void executeStoreItemsAction(ShoppingListItem[] items) {
+        new StoreItemsTask(this).execute(items);
+    }
+
+    private static class SetupAutocompleteDictionaryTask extends AsyncTask<Void, Void, String[]> {
+        private final WeakReference<MainActivity> ref;
+
+        SetupAutocompleteDictionaryTask(MainActivity context) {
+            ref = new WeakReference<>(context);
+        }
+
+        @Override
+        protected String[] doInBackground(Void... nothing) {
+            MainActivity activity = ref.get();
+            AutocompleteEntryDao dao = activity.mDatabase.autocompleteEntryDao();
+            return dao.getAllEntries().toArray(new String[0]);
+        }
+
+        @Override
+        protected void onPostExecute(String[] autocompleteDictionary) {
+            super.onPostExecute(autocompleteDictionary);
+            MainActivity activity = ref.get();
+            activity.mAutocompleteDictionary = autocompleteDictionary;
         }
     }
 
-    private void showToastMessage(String s) {
-        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
-    }
+    private static class AddToAutocompleteTask extends AsyncTask<String, Void, Void> {
+        private final WeakReference<MainActivity> ref;
 
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (key.equals(getString(R.string.key_set_maximum_budget_checkbox))) {
-            mBudgetIsSet = sharedPreferences.getBoolean(key,
-                    getResources().getBoolean(R.bool.pref_set_budget_default));
-        } else if (key.equals(getString(R.string.key_maximum_budget_edit_text))) {
-            mBudget = new BigDecimal(sharedPreferences.getString(key,
-                    getResources().getString(R.string.pref_maximum_budget_default)));
-        } else if (key.equals(getString(R.string.key_set_warning_checkbox))) {
-            mWarningIsSet = sharedPreferences.getBoolean(key,
-                    getResources().getBoolean(R.bool.pref_set_warning_default));
-        } else if (key.equals(getString(R.string.key_warning_type_list))) {
-            mWarningType = sharedPreferences.getString(key,
-                    getResources().getString(R.string.warn_fixed_price_list_value));
-        } else if (key.equals(getString(R.string.key_warning_fixed_edit_text))) {
-            mWarningFixedValue =
-                    new BigDecimal(sharedPreferences.getString(key,
-                            getResources().getString(R.string.pref_warning_fixed_default)));
-        } else if (key.equals(getString(R.string.key_warning_percentage_seek_bar))) {
-            mWarningPercentage = sharedPreferences.getInt(key,
-                    getResources().getInteger(R.integer.pref_warning_percentage_default));
-        } else if (key.equals(getString(R.string.key_include_tax_checkbox))) {
-            mIncludeTax = sharedPreferences.getBoolean(key,
-                    getResources().getBoolean(R.bool.pref_include_tax_default));
-            if (mIncludeTax) {
-                ShoppingListItem.setTaxRate(mTaxRate);
-            } else {
-                ShoppingListItem.setTaxRate(new BigDecimal("0"));
-            }
-        } else if (key.equals(getString(R.string.key_tax_rate_edit_text))) {
-            mTaxRate = new BigDecimal(sharedPreferences.getString(key,
-                    getResources().getString(R.string.pref_tax_rate_default)))
-                    .multiply(new BigDecimal("0.01"));
-            if (mIncludeTax) {
-                ShoppingListItem.setTaxRate(mTaxRate);
-            } else {
-                ShoppingListItem.setTaxRate(new BigDecimal("0"));
-            }
-        } else if (key.equals(getString(R.string.key_enable_autocomplete_checkbox))) {
-            mAutocompleteEnabled = sharedPreferences.getBoolean(key,
-                    getResources().getBoolean(R.bool.pref_enable_autocomplete_default));
+        AddToAutocompleteTask(MainActivity context) {
+            ref = new WeakReference<>(context);
         }
 
-        updateWarning();
-        updateTotalPrice(mShoppingListAdapter.getTotalPrice());
-    }
+        @Override
+        protected Void doInBackground(String... params) {
+            MainActivity activity = ref.get();
+            AutocompleteEntryDao dao = activity.mDatabase.autocompleteEntryDao();
+            AutocompleteEntry entry = new AutocompleteEntry(params[0]);
+            dao.insertAll(entry);
+            return null;
+        }
 
-    public boolean isTaxIncluded() {
-        return mIncludeTax;
-    }
-
-    public void showFootnotes(boolean optionalItemsExist, boolean conditionedItemsExist) {
-        if (optionalItemsExist || conditionedItemsExist) {
-            mFootnotes.setVisibility(View.VISIBLE);
-            mOptionalTextView.setVisibility(optionalItemsExist ? View.VISIBLE : View.GONE);
-            mConditionTextView.setVisibility(conditionedItemsExist ? View.VISIBLE : View.GONE);
-        } else {
-            mFootnotes.setVisibility(View.GONE);
+        @Override
+        protected void onPostExecute(Void nothing) {
+            super.onPostExecute(nothing);
+            MainActivity activity = ref.get();
+            activity.setupAutocompleteDictionary();
         }
     }
 
-    public class RetrieveItemsTask extends AsyncTask<Void, Void, List<ShoppingListItem>> {
+    private static class RetrieveItemsTask extends AsyncTask<Void, Void, List<ShoppingListItem>> {
+        private final WeakReference<MainActivity> ref;
+
+        RetrieveItemsTask(MainActivity context) {
+            ref = new WeakReference<>(context);
+        }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            mLoadingIndicator.setVisibility(View.VISIBLE);
-            mRecyclerView.setVisibility(View.GONE);
-            mErrorDisplay.setVisibility(View.GONE);
+            MainActivity activity = ref.get();
+            activity.mLoadingIndicatorConstraintLayout.setVisibility(View.VISIBLE);
+            activity.mRecyclerView.setVisibility(View.GONE);
+            activity.mErrorDisplayConstraintLayout.setVisibility(View.GONE);
         }
 
         @Override
-        protected List<ShoppingListItem> doInBackground(Void... voids) {
-            ShoppingListItemDao dao = db.shoppingListItemDao();
+        protected List<ShoppingListItem> doInBackground(Void... nothing) {
+            MainActivity activity = ref.get();
+            ShoppingListItemDao dao = activity.mDatabase.shoppingListItemDao();
             List<ShoppingListItemDatabaseEntity> entities = dao.getAllItems();
             List<ShoppingListItem> items = new ArrayList<>();
             for (ShoppingListItemDatabaseEntity entity : entities) {
@@ -1080,16 +1178,25 @@ public class MainActivity
         @Override
         protected void onPostExecute(List<ShoppingListItem> shoppingListItems) {
             super.onPostExecute(shoppingListItems);
-            mShoppingListAdapter.setAllItems(shoppingListItems);
-            mLoadingIndicator.setVisibility(View.GONE);
-            switchViews(shoppingListItems.isEmpty());
+            MainActivity activity = ref.get();
+
+            activity.mShoppingListAdapter.setAllItems(shoppingListItems);
+            activity.mLoadingIndicatorConstraintLayout.setVisibility(View.GONE);
+            activity.switchViews(shoppingListItems.isEmpty());
         }
     }
 
-    public class StoreItemsTask extends AsyncTask<ShoppingListItem, Void, Void> {
+    private static class StoreItemsTask extends AsyncTask<ShoppingListItem, Void, Void> {
+        private final WeakReference<MainActivity> ref;
+
+        StoreItemsTask(MainActivity context) {
+            ref = new WeakReference<>(context);
+        }
+
         @Override
         protected Void doInBackground(ShoppingListItem... shoppingListItems) {
-            ShoppingListItemDao dao = db.shoppingListItemDao();
+            MainActivity activity = ref.get();
+            ShoppingListItemDao dao = activity.mDatabase.shoppingListItemDao();
             ShoppingListItemDatabaseEntity[] entities =
                     new ShoppingListItemDatabaseEntity[shoppingListItems.length];
             for (int i = 0; i < entities.length; i++) {
@@ -1105,32 +1212,34 @@ public class MainActivity
             implements MaterialDialog.SingleButtonCallback {
         @Override
         public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-            currentItem.setStatus(ShoppingListItem.CHECKED);
+            itemDialogCurrentItem.setStatus(ShoppingListItem.CHECKED);
 
-            switch (whichRadioButtonChecked) {
-                case R.id.per_unit:
-                    currentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_UNIT);
-                    currentItem.setPricePerUnit(
-                            new BigDecimal(priceEditText.getText().toString()));
-                    currentItem.setQuantity(currentItemQuantity);
+            switch (itemDialogWhichRadioButtonChecked) {
+                case R.id.rb_per_unit:
+                    itemDialogCurrentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_UNIT);
+                    itemDialogCurrentItem.setPricePerUnit(
+                            new BigDecimal(itemDialogPriceEditText.getText().toString()));
+                    itemDialogCurrentItem.setQuantity(itemDialogCurrentItemQuantity);
                     break;
-                case R.id.per_kg:
-                    currentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
-                    currentItem.setPricePerUnit(
-                            new BigDecimal(priceEditText.getText().toString()));
-                    currentItem.setWeightInKilograms(
-                            new BigDecimal(kilogramsEditText.getText().toString()));
+                case R.id.rb_per_kg:
+                    itemDialogCurrentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
+                    itemDialogCurrentItem.setPricePerUnit(
+                            new BigDecimal(itemDialogPriceEditText.getText().toString()));
+                    itemDialogCurrentItem.setWeightInKilograms(
+                            new BigDecimal(itemDialogKilogramsEditText.getText().toString()));
                     break;
-                case R.id.per_pound:
-                    currentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
-                    BigDecimal pricePerPound = new BigDecimal(priceEditText.getText().toString());
-                    BigDecimal pounds = new BigDecimal(poundsEditText.getText().toString());
-                    int ounces = TextUtils.isEmpty(ouncesEditText.getText())
+                case R.id.rb_per_pound:
+                    itemDialogCurrentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
+                    BigDecimal pricePerPound =
+                            new BigDecimal(itemDialogPriceEditText.getText().toString());
+                    BigDecimal pounds =
+                            new BigDecimal(itemDialogPoundsEditText.getText().toString());
+                    int ounces = TextUtils.isEmpty(itemDialogOuncesEditText.getText())
                             ? 0
-                            : Integer.parseInt(ouncesEditText.getText().toString());
+                            : Integer.parseInt(itemDialogOuncesEditText.getText().toString());
                     BigDecimal kilograms = ShoppingListItem.poundsToKilograms(pounds, ounces);
-                    currentItem.setPricePerPound(pricePerPound);
-                    currentItem.setWeightInKilograms(kilograms);
+                    itemDialogCurrentItem.setPricePerPound(pricePerPound);
+                    itemDialogCurrentItem.setWeightInKilograms(kilograms);
                     break;
             }
 
@@ -1139,8 +1248,8 @@ public class MainActivity
             // If over budget, warn the user
             if (mBudgetIsSet && mShoppingListAdapter.getTotalPrice().compareTo(mBudget) > 0) {
                 new MaterialDialog.Builder(MainActivity.this)
-                        .content(R.string.over_budget_warning_message)
-                        .positiveText(R.string.ok)
+                        .content(R.string.over_budget_dialog_body)
+                        .positiveText(R.string.over_budget_dialog_dismiss_button)
                         .show();
             }
         }
@@ -1150,7 +1259,7 @@ public class MainActivity
             implements MaterialDialog.SingleButtonCallback {
         @Override
         public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-            currentItem.setStatus(ShoppingListItem.NOT_BUYING);
+            itemDialogCurrentItem.setStatus(ShoppingListItem.NOT_BUYING);
             mShoppingListAdapter.onDataChanged();
         }
     }
@@ -1159,33 +1268,33 @@ public class MainActivity
             implements MaterialDialog.SingleButtonCallback {
         @Override
         public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-            switch (whichRadioButtonChecked) {
-                case R.id.per_unit:
-                    currentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_UNIT);
-                    currentItem.setPricePerUnit(
-                            new BigDecimal(priceEditText.getText().toString()));
-                    currentItem.setQuantity(currentItemQuantity);
+            switch (itemDialogWhichRadioButtonChecked) {
+                case R.id.rb_per_unit:
+                    itemDialogCurrentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_UNIT);
+                    itemDialogCurrentItem.setPricePerUnit(
+                            new BigDecimal(itemDialogPriceEditText.getText().toString()));
+                    itemDialogCurrentItem.setQuantity(itemDialogCurrentItemQuantity);
                     break;
-                case R.id.per_kg:
-                    currentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
-                    currentItem.setPricePerUnit(
-                            new BigDecimal(priceEditText.getText().toString()));
-                    currentItem.setWeightInKilograms(
-                            new BigDecimal(kilogramsEditText.getText().toString()));
+                case R.id.rb_per_kg:
+                    itemDialogCurrentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
+                    itemDialogCurrentItem.setPricePerUnit(
+                            new BigDecimal(itemDialogPriceEditText.getText().toString()));
+                    itemDialogCurrentItem.setWeightInKilograms(
+                            new BigDecimal(itemDialogKilogramsEditText.getText().toString()));
                     break;
-                case R.id.per_pound:
-                    currentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
-                    BigDecimal pricePerPound = new BigDecimal(priceEditText.getText().toString());
-                    BigDecimal pounds = new BigDecimal(poundsEditText.getText().toString());
+                case R.id.rb_per_pound:
+                    itemDialogCurrentItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
+                    BigDecimal pricePerPound = new BigDecimal(itemDialogPriceEditText.getText().toString());
+                    BigDecimal pounds = new BigDecimal(itemDialogPoundsEditText.getText().toString());
                     int ounces;
                     try {
-                        ounces = Integer.parseInt(ouncesEditText.getText().toString());
+                        ounces = Integer.parseInt(itemDialogOuncesEditText.getText().toString());
                     } catch (NumberFormatException e) {
                         ounces = 0;
                     }
                     BigDecimal kilograms = ShoppingListItem.poundsToKilograms(pounds, ounces);
-                    currentItem.setPricePerPound(pricePerPound);
-                    currentItem.setWeightInKilograms(kilograms);
+                    itemDialogCurrentItem.setPricePerPound(pricePerPound);
+                    itemDialogCurrentItem.setWeightInKilograms(kilograms);
                     break;
             }
 
@@ -1197,8 +1306,7 @@ public class MainActivity
             implements MaterialDialog.SingleButtonCallback {
         @Override
         public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-            currentItem.reset();
-            currentItem.setStatus(ShoppingListItem.UNCHECKED);
+            itemDialogCurrentItem.reset();
             mShoppingListAdapter.onDataChanged();
         }
     }

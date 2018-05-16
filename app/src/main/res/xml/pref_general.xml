@@ -1,55 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+  ~ Copyright (c) 2018 Oleksiy Bolgarov.
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  ~ and associated documentation files (the "Software"), to deal in the Software without
+  ~ restriction, including without limitation the rights to use, copy, modify, merge, publish,
+  ~ distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+  ~ Software is furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or
+  ~ substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  ~ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  -->
+
+<android.support.v7.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:key="@string/key_root">
 
-    <PreferenceCategory android:title="@string/budget">
+    <PreferenceCategory android:title="@string/pref_title_budget">
 
         <CheckBoxPreference
-            android:defaultValue="@bool/pref_set_budget_default"
+            android:defaultValue="@bool/pref_default_set_budget"
             android:key="@string/key_set_maximum_budget_checkbox"
-            android:title="@string/set_maximum_budget" />
+            android:title="@string/pref_title_set_maximum_budget" />
 
         <PreferenceScreen
             android:key="@string/key_budget_subscreen"
-            android:title="@string/budget_settings">
+            android:title="@string/pref_title_budget_settings">
 
-            <PreferenceCategory android:title="@string/budget">
+            <PreferenceCategory android:title="@string/pref_title_budget">
 
                 <org.bolgarov.alexjr.shoppinglist.preferenceSubclasses.MoneyPreference
-                    android:defaultValue="@string/pref_maximum_budget_default"
+                    android:defaultValue="@string/pref_default_maximum_budget"
                     android:key="@string/key_maximum_budget_edit_text"
-                    android:title="@string/maximum_budget" />
+                    android:title="@string/pref_title_maximum_budget" />
 
             </PreferenceCategory>
 
-            <PreferenceCategory android:title="@string/budget_warning">
+            <PreferenceCategory android:title="@string/pref_title_budget_warning">
 
                 <CheckBoxPreference
-                    android:defaultValue="@bool/pref_set_warning_default"
+                    android:defaultValue="@bool/pref_default_set_warning"
                     android:key="@string/key_set_warning_checkbox"
-                    android:title="@string/set_warning" />
+                    android:title="@string/pref_title_set_warning" />
 
                 <ListPreference
-                    android:defaultValue="@string/warn_fixed_price_list_value"
+                    android:defaultValue="@string/pref_value_warn_fixed_price"
                     android:entries="@array/warning_type_labels"
                     android:entryValues="@array/warning_type_values"
                     android:key="@string/key_warning_type_list"
-                    android:title="@string/warning_type" />
+                    android:title="@string/pref_title_warning_type" />
 
                 <!-- Exactly one of the following two preferences should be shown, based on the
                 value of the above preference. -->
 
                 <!-- Option 0 -->
                 <org.bolgarov.alexjr.shoppinglist.preferenceSubclasses.MoneyPreference
-                    android:defaultValue="@string/pref_warning_fixed_default"
+                    android:defaultValue="@string/pref_default_warning_fixed"
                     android:key="@string/key_warning_fixed_edit_text"
-                    android:title="@string/warning_fixed" />
+                    android:title="@string/pref_title_warning_fixed" />
 
                 <!-- Option 1 -->
                 <org.bolgarov.alexjr.shoppinglist.preferenceSubclasses.CustomSeekBarPreference
-                    android:defaultValue="@integer/pref_warning_percentage_default"
+                    android:defaultValue="@integer/pref_default_warning_percentage"
                     android:key="@string/key_warning_percentage_seek_bar"
-                    android:title="@string/warning_percentage" />
+                    android:title="@string/pref_title_warning_percentage" />
 
 
             </PreferenceCategory>
@@ -58,30 +77,31 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/tax">
+    <PreferenceCategory android:title="@string/pref_title_tax">
 
         <CheckBoxPreference
-            android:defaultValue="@bool/pref_include_tax_default"
+            android:defaultValue="@bool/pref_default_include_tax"
             android:key="@string/key_include_tax_checkbox"
-            android:title="@string/include_tax" />
+            android:title="@string/pref_title_include_tax" />
 
         <org.bolgarov.alexjr.shoppinglist.preferenceSubclasses.PercentPreference
-            android:defaultValue="@string/pref_tax_rate_default"
+            android:defaultValue="@string/pref_default_tax_rate"
             android:key="@string/key_tax_rate_edit_text"
-            android:title="@string/tax_rate" />
+            android:title="@string/pref_title_tax_rate" />
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/autocomplete">
+    <PreferenceCategory android:title="@string/pref_title_autocomplete">
 
         <CheckBoxPreference
-            android:defaultValue="@bool/pref_enable_autocomplete_default"
+            android:defaultValue="@bool/pref_default_enable_autocomplete"
             android:key="@string/key_enable_autocomplete_checkbox"
-            android:title="@string/enable_autocomplete" />
+            android:title="@string/pref_title_enable_autocomplete" />
 
         <PreferenceScreen
             android:key="@string/key_autocomplete_dictionary_intent"
-            android:title="@string/manage_autocomplete_dictionary"></PreferenceScreen>
+            android:title="@string/pref_title_manage_autocomplete_dictionary" />
+
     </PreferenceCategory>
 
-</PreferenceScreen>
+</android.support.v7.preference.PreferenceScreen>

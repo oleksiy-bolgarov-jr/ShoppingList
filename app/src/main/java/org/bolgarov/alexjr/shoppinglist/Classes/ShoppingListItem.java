@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2018 Oleksiy Bolgarov.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package org.bolgarov.alexjr.shoppinglist.Classes;
 
 import android.support.annotation.Nullable;
@@ -5,20 +24,26 @@ import android.support.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+/**
+ * Represents an entry in the shopping list, which includes the name, quantity/weight, price, and
+ * status.
+ */
 public class ShoppingListItem {
+    @SuppressWarnings("unused")
+    private static final String TAG = ShoppingListItem.class.getSimpleName();
+
     public static final boolean PER_UNIT = true;
     public static final boolean PER_WEIGHT = !PER_UNIT;
     public static final int UNCHECKED = 0;
     public static final int CHECKED = 1;
     public static final int NOT_BUYING = 2;
-    private static final String TAG = ShoppingListItem.class.getSimpleName();
     private static final int OUNCES_PER_POUND = 16;
     private static final double POUNDS_PER_KILOGRAM = 2.20462262185;
     // The following is defined explicitly to prevent floating point errors.
     private static final double KILOGRAMS_PER_POUND = 0.45359237;
     private static BigDecimal taxRate = new BigDecimal("0.13");
 
-    private String itemName;
+    private final String itemName;
     private int status = UNCHECKED;
     private BigDecimal pricePerUnit = new BigDecimal("0");
     private int quantity;
@@ -26,8 +51,8 @@ public class ShoppingListItem {
     // The weight in pounds can be obtained directly from the weight in kilograms. Therefore, there
     // is no need to store it as a field.
     private boolean perUnitOrPerWeight = PER_UNIT;
-    private boolean optional;
-    private String condition;
+    private final boolean optional;
+    private final String condition;
 
     /**
      * Creates a new ShoppingListItem with the specified name, whether or not it is optional, and
@@ -49,18 +74,22 @@ public class ShoppingListItem {
     /**
      * This constructor should only be used when using the database.
      *
-     * @param name
-     * @param status
-     * @param pricePerUnit
-     * @param quantity
-     * @param weightInKilograms
-     * @param perUnitOrPerWeight
-     * @param optional
-     * @param condition
+     * @param name               The name of the item
+     * @param status             UNCHECKED, CHECKED, or NOT_BUYING
+     * @param pricePerUnit       The price per unit if the item is priced per unit, or the price per
+     *                           kilogram if the item is priced per weight
+     * @param quantity           How many units of the item exist; not used if the item is priced
+     *                           per weight
+     * @param weightInKilograms  The weight of the item in kilograms; not used if the item is priced
+     *                           per unit
+     * @param perUnitOrPerWeight Whether the item is priced per unit or per weight
+     * @param optional           Is the item optional?
+     * @param condition          The optional condition under which the user is allowed to buy the
+     *                           item, or null if the user does not wish to specify a condition
      */
     private ShoppingListItem(String name, int status, BigDecimal pricePerUnit, int quantity,
                              BigDecimal weightInKilograms, boolean perUnitOrPerWeight,
-                             boolean optional, String condition) {
+                             boolean optional, @Nullable String condition) {
         this.itemName = name;
         this.status = status;
         this.pricePerUnit = pricePerUnit;
@@ -77,7 +106,8 @@ public class ShoppingListItem {
      * @param entity The entity used
      * @return A ShoppingListItem instance based on the entity
      */
-    public static ShoppingListItem getItemFromDatabaseEntity(ShoppingListItemDatabaseEntity entity) {
+    public static ShoppingListItem getItemFromDatabaseEntity(
+            ShoppingListItemDatabaseEntity entity) {
         return new ShoppingListItem(
                 entity.getItemName(),
                 entity.getStatus(),
@@ -109,16 +139,6 @@ public class ShoppingListItem {
     }
 
     /**
-     * Returns the current tax rate in decimal format, i.e. if the tax rate is 15%, then this will
-     * return 0.15.
-     *
-     * @return The current tax rate in decimal format
-     */
-    public static BigDecimal getTaxRate() {
-        return taxRate;
-    }
-
-    /**
      * Changes the current tax rate to the specified new tax rate.
      *
      * @param newTaxRate The new tax rate
@@ -134,7 +154,7 @@ public class ShoppingListItem {
      * @return The price after tax
      */
     public static BigDecimal getTaxAdjustedPrice(BigDecimal price) {
-        BigDecimal tax = price.multiply(taxRate);
+        BigDecimal tax = getTax(price);
         return price.add(tax);
     }
 
@@ -165,10 +185,20 @@ public class ShoppingListItem {
         return kilograms.multiply(new BigDecimal(POUNDS_PER_KILOGRAM));
     }
 
+    /**
+     * Returns whether the item is checked, unchecked, or marked as "not buying".
+     *
+     * @return CHECKED, UNCHECKED, or NOT_BUYING
+     */
     public int getStatus() {
         return status;
     }
 
+    /**
+     * Sets the status of the item.
+     *
+     * @param status CHECKED, UNCHECKED, or NOT_BUYING
+     */
     public void setStatus(int status) {
         this.status = status;
     }
@@ -202,7 +232,7 @@ public class ShoppingListItem {
     }
 
     /**
-     * Sets the weight of this item to the specified weight.
+     * Sets the weight of this item to the specified weight in kilograms.
      *
      * @param weight The weight to be set
      */
@@ -238,15 +268,6 @@ public class ShoppingListItem {
         return optional;
     }
 
-    /**
-     * Sets the optionality of this item.
-     *
-     * @param optional The optionality of this item
-     */
-    public void setOptional(boolean optional) {
-        this.optional = optional;
-    }
-
     public boolean hasCondition() {
         return condition != null && !condition.equals("");
     }
@@ -260,15 +281,6 @@ public class ShoppingListItem {
      */
     public String getCondition() {
         return condition;
-    }
-
-    /**
-     * Sets the condition under which the user is allowed to buy this item.
-     *
-     * @param condition The condition under which the user is allowed to buy this item
-     */
-    public void setCondition(@Nullable String condition) {
-        this.condition = condition;
     }
 
     /**
@@ -321,7 +333,11 @@ public class ShoppingListItem {
                 new BigDecimal(POUNDS_PER_KILOGRAM));
     }
 
+    /**
+     * Resets this item, setting its status to UNCHECKED and setting all values to 0.
+     */
     public void reset() {
+        status = UNCHECKED;
         pricePerUnit = new BigDecimal("0");
         quantity = 0;
         weightInKilograms = new BigDecimal(0);

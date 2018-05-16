@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2018 Oleksiy Bolgarov.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package org.bolgarov.alexjr.shoppinglist.preferenceSubclasses;
 
 import android.content.Context;
@@ -13,17 +32,24 @@ import android.widget.TextView;
 
 import org.bolgarov.alexjr.shoppinglist.R;
 
+@SuppressWarnings({
+        "unused",       // Actually used in pref_general.xml
+        "WeakerAccess"  // Don't want to make constructors private in case it breaks the XML
+})
 public class CustomSeekBarPreference extends Preference implements SeekBar.OnSeekBarChangeListener {
+    private final Context mContext;
+
     private TextView mTitleTextView, mSummaryTextView;
-    private SeekBar mSeekbar;
-    private EditText mSeekbarValueEditText;
-    private TextView mSeekbarValueTextView; // TODO Remove
+    private SeekBar mSeekBar;
+    private EditText mSeekBarValueEditText;
 
     private int mPercentage;
 
-    public CustomSeekBarPreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public CustomSeekBarPreference(Context context, AttributeSet attrs, int defStyleAttr,
+                                   int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        setLayoutResource(R.layout.custom_seekbar_preference);
+        mContext = context;
+        setLayoutResource(R.layout.preference_custom_seekbar);
     }
 
     public CustomSeekBarPreference(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -53,14 +79,16 @@ public class CustomSeekBarPreference extends Preference implements SeekBar.OnSee
 
         mTitleTextView = (TextView) holder.findViewById(R.id.title_text_view);
         mSummaryTextView = (TextView) holder.findViewById(R.id.summary_text_view);
-        mSeekbar = (SeekBar) holder.findViewById(R.id.seek_bar);
-        mSeekbarValueEditText = (EditText) holder.findViewById(R.id.seekbar_value_edit_text);
+        mSeekBar = (SeekBar) holder.findViewById(R.id.seek_bar);
+        mSeekBarValueEditText = (EditText) holder.findViewById(R.id.seekbar_value_edit_text);
 
         mTitleTextView.setText(getTitle());
         mSummaryTextView.setText(getSummary());
-        mSeekbar.setProgress(getPercentage());
-        mSeekbarValueEditText.setText("" + getPercentage());
-        mSeekbarValueEditText.addTextChangedListener(new TextWatcher() {
+        mSeekBar.setProgress(mPercentage);
+        String editTextValue = mContext.getString(
+                R.string.pref_placeholder_seek_bar_edit_text, mPercentage);
+        mSeekBarValueEditText.setText(editTextValue);
+        mSeekBarValueEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 // Not used
@@ -76,11 +104,11 @@ public class CustomSeekBarPreference extends Preference implements SeekBar.OnSee
                 }
                 // Protect against illegal values
                 if (percentage < 0) {
-                    mSeekbar.setProgress(0);
+                    mSeekBar.setProgress(0);
                 } else if (percentage > 100) {
-                    mSeekbar.setProgress(100);
+                    mSeekBar.setProgress(100);
                 } else {
-                    mSeekbar.setProgress(percentage);
+                    mSeekBar.setProgress(percentage);
                 }
             }
 
@@ -89,20 +117,22 @@ public class CustomSeekBarPreference extends Preference implements SeekBar.OnSee
                 // Not used
             }
         });
-        mSeekbarValueEditText.setOnFocusChangeListener((view, hasFocus) -> {
+        mSeekBarValueEditText.setOnFocusChangeListener((view, hasFocus) -> {
             if (!hasFocus) {
-                mSeekbarValueEditText.setText("" + mPercentage);
+                String localEditTextValue = mContext.getString(
+                        R.string.pref_placeholder_seek_bar_edit_text, mPercentage);
+                mSeekBarValueEditText.setText(localEditTextValue);
             }
         });
 
-        mSeekbar.setOnSeekBarChangeListener(this);
+        mSeekBar.setOnSeekBarChangeListener(this);
     }
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         setPercentage(progress);
-        if (!mSeekbarValueEditText.hasFocus()) {
-            mSeekbarValueEditText.setText("" + mPercentage);
+        if (!mSeekBarValueEditText.hasFocus()) {
+            mSeekBarValueEditText.setText(mContext.getString(R.string.pref_placeholder_seek_bar_edit_text, mPercentage));
         }
     }
 
