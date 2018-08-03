@@ -20,18 +20,29 @@
 package org.bolgarov.alexjr.shoppinglist.Classes;
 
 import android.arch.persistence.room.Dao;
+import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.Query;
+import android.arch.persistence.room.Update;
 
 import java.util.List;
 
 @Dao
 public interface ShoppingListItemDao {
     @Query("SELECT * FROM shopping_list_items")
-    List<ShoppingListItemDatabaseEntity> getAllItems();
+    List<ShoppingListItem> getAllItems();
+
+    @Query("SELECT * FROM shopping_list_items WHERE id = :id")
+    ShoppingListItem get(int id);
 
     @Insert
-    void insertAll(ShoppingListItemDatabaseEntity... items);
+    void insertAll(ShoppingListItem... items);
+
+    @Update
+    void update(ShoppingListItem... items);
+
+    @Delete
+    void delete(ShoppingListItem... items);
 
     @Query("DELETE FROM shopping_list_items")
     void deleteAllItems();

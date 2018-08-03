@@ -19,200 +19,165 @@
 
 package org.bolgarov.alexjr.shoppinglist.Classes;
 
+import android.arch.persistence.room.ColumnInfo;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
+import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.Nullable;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 /**
- * Represents an entry in the shopping list, which includes the name, quantity/weight, price, and
- * status.
+ * Represents an item in the shopping list.
  */
+@Entity(tableName = "shopping_list_items")
 public class ShoppingListItem {
+
+    @Ignore
+    public static final boolean PER_UNIT = true;
+    @Ignore
+    public static final boolean PER_WEIGHT = !PER_UNIT;
+    @Ignore
+    public static final int UNCHECKED = 0;
+    @Ignore
+    public static final int CHECKED = 1;
+    @Ignore
+    public static final int NOT_BUYING = 2;
+    @Ignore
     @SuppressWarnings("unused")
     private static final String TAG = ShoppingListItem.class.getSimpleName();
-
-    public static final boolean PER_UNIT = true;
-    public static final boolean PER_WEIGHT = !PER_UNIT;
-    public static final int UNCHECKED = 0;
-    public static final int CHECKED = 1;
-    public static final int NOT_BUYING = 2;
+    @Ignore
     private static final int OUNCES_PER_POUND = 16;
-    private static final double POUNDS_PER_KILOGRAM = 2.20462262185;
-    // The following is defined explicitly to prevent floating point errors.
-    private static final double KILOGRAMS_PER_POUND = 0.45359237;
-    private static BigDecimal taxRate = new BigDecimal("0.13");
+    @Ignore
+    private static final BigDecimal POUNDS_PER_KILOGRAM = new BigDecimal("2.20462262185");
+    @Ignore
+    private static final BigDecimal KILOGRAMS_PER_POUND = new BigDecimal("0.45359237");
 
-    private final String itemName;
-    private int status = UNCHECKED;
-    private BigDecimal pricePerUnit = new BigDecimal("0");
-    private int quantity;
-    private BigDecimal weightInKilograms;
-    // The weight in pounds can be obtained directly from the weight in kilograms. Therefore, there
-    // is no need to store it as a field.
-    private boolean perUnitOrPerWeight = PER_UNIT;
-    private final boolean optional;
+    @Ignore
+    private static BigDecimal taxRate = BigDecimal.ZERO;    // This will be set by shared
+    // preferences.
+    private final String name;
+    @Nullable
     private final String condition;
+    private int status = UNCHECKED;
+    private final boolean optional;
+    @PrimaryKey(autoGenerate = true)
+    private int id;
+    @ColumnInfo(name = "base_price")
+    private BigDecimal basePrice = BigDecimal.ZERO;
+    private int quantity = 0;
+    @ColumnInfo(name = "weight_in_kilograms")
+    private BigDecimal weightInKilograms = BigDecimal.ZERO;
+    @ColumnInfo(name = "per_unit_or_per_weight")
+    private boolean perUnitOrPerWeight = PER_UNIT;
 
     /**
-     * Creates a new ShoppingListItem with the specified name, whether or not it is optional, and
-     * a condition under which the user is allowed to buy the item (if specified).
+     * Creates a new ShoppingListItem with the given name, optionality, and condition. All other
+     * associated values (price, weight, etc.) are set to 0.
      *
-     * @param name      The name of the item
-     * @param optional  Is the item optional?
-     * @param condition The condition under which the user is allowed to buy the item, or null if
-     *                  the user does not wish to specify a condition
+     * @param name      The name of the item (e.g. "Milk", "Eggs", etc.)
+     * @param optional  True iff the item is optional.
+     * @param condition A condition under which the user is allowed to buy the item if the user
+     *                  wishes to specify such a condition, null otherwise.
      */
     public ShoppingListItem(String name, boolean optional, @Nullable String condition) {
-        this.itemName = name;
-        this.quantity = 0;
-        this.weightInKilograms = new BigDecimal(0);
+        this.name = name;
         this.optional = optional;
         this.condition = condition;
     }
 
-    /**
-     * This constructor should only be used when using the database.
-     *
-     * @param name               The name of the item
-     * @param status             UNCHECKED, CHECKED, or NOT_BUYING
-     * @param pricePerUnit       The price per unit if the item is priced per unit, or the price per
-     *                           kilogram if the item is priced per weight
-     * @param quantity           How many units of the item exist; not used if the item is priced
-     *                           per weight
-     * @param weightInKilograms  The weight of the item in kilograms; not used if the item is priced
-     *                           per unit
-     * @param perUnitOrPerWeight Whether the item is priced per unit or per weight
-     * @param optional           Is the item optional?
-     * @param condition          The optional condition under which the user is allowed to buy the
-     *                           item, or null if the user does not wish to specify a condition
-     */
-    private ShoppingListItem(String name, int status, BigDecimal pricePerUnit, int quantity,
-                             BigDecimal weightInKilograms, boolean perUnitOrPerWeight,
-                             boolean optional, @Nullable String condition) {
-        this.itemName = name;
-        this.status = status;
-        this.pricePerUnit = pricePerUnit;
-        this.quantity = quantity;
-        this.weightInKilograms = weightInKilograms;
-        this.perUnitOrPerWeight = perUnitOrPerWeight;
-        this.optional = optional;
-        this.condition = condition;
+    public static void setTaxRate(BigDecimal taxRate) {
+        ShoppingListItem.taxRate = taxRate;
     }
 
     /**
-     * Returns a ShoppingListItem created from the corresponding database entity.
+     * Returns the tax of the given price.
      *
-     * @param entity The entity used
-     * @return A ShoppingListItem instance based on the entity
+     * @param price A price
+     * @return The tax on that price, based on the tax rate
      */
-    public static ShoppingListItem getItemFromDatabaseEntity(
-            ShoppingListItemDatabaseEntity entity) {
-        return new ShoppingListItem(
-                entity.getItemName(),
-                entity.getStatus(),
-                entity.getPricePerUnit(),
-                entity.getQuantity(),
-                entity.getWeightInKilograms(),
-                entity.isPerUnitOrPerWeight(),
-                entity.isOptional(),
-                entity.getCondition()
-        );
-    }
-
-    public static ShoppingListItemDatabaseEntity itemAsDatabaseEntity(ShoppingListItem item) {
-        ShoppingListItemDatabaseEntity entity = new ShoppingListItemDatabaseEntity();
-        entity.setItemName(item.getItemName());
-        entity.setStatus(item.getStatus());
-        entity.setPricePerUnit(item.getPricePerUnit());
-        entity.setQuantity(item.getQuantity());
-        entity.setWeightInKilograms(item.getWeightInKilograms());
-        entity.setPerUnitOrPerWeight(item.isPerUnitOrPerWeight());
-        entity.setOptional(item.isOptional());
-        entity.setCondition(item.getCondition());
-
-        return entity;
-    }
-
     public static BigDecimal getTax(BigDecimal price) {
         return price.multiply(taxRate);
     }
 
     /**
-     * Changes the current tax rate to the specified new tax rate.
-     *
-     * @param newTaxRate The new tax rate
+     * Resets this item, setting all values to what they were when this item was created.
      */
-    public static void setTaxRate(BigDecimal newTaxRate) {
-        taxRate = newTaxRate;
+    public void reset() {
+        status = UNCHECKED;
+        basePrice = BigDecimal.ZERO;
+        quantity = 0;
+        weightInKilograms = BigDecimal.ZERO;
+        perUnitOrPerWeight = PER_UNIT;
     }
 
-    /**
-     * Returns the tax-adjusted price.
-     *
-     * @param price The price before tax
-     * @return The price after tax
-     */
-    public static BigDecimal getTaxAdjustedPrice(BigDecimal price) {
-        BigDecimal tax = getTax(price);
-        return price.add(tax);
+    public String getName() {
+        return name;
     }
 
-    public static BigDecimal getPricePerKilogram(BigDecimal pricePerPound) {
-        return pricePerPound.multiply(new BigDecimal(POUNDS_PER_KILOGRAM));
-    }
-
-    public static BigDecimal getPricePerPound(BigDecimal pricePerKilogram) {
-        return pricePerKilogram.multiply(new BigDecimal(KILOGRAMS_PER_POUND));
-    }
-
-    /**
-     * Given a weight in pounds and ounces, returns the weight in kilograms. The weight may be
-     * specified either in whole pounds and ounces (e.g. 6lb8oz) , or in decimal fractions of
-     * pounds (e.g. 6.5lb), in which case ounces is to be 0.
-     *
-     * @param pounds The weight in pounds, or the pound part of the weight in pounds and ounces.
-     * @param ounces If the weight is specified in pounds and ounces, the ounce part of this weight.
-     *               Otherwise, 0.
-     * @return The weight in kilograms
-     */
-    public static BigDecimal poundsToKilograms(BigDecimal pounds, int ounces) {
-        BigDecimal ouncesAsDecimal = new BigDecimal((double) ounces / (double) OUNCES_PER_POUND);
-        return pounds.add(ouncesAsDecimal).multiply(new BigDecimal(KILOGRAMS_PER_POUND));
-    }
-
-    public static BigDecimal kilogramsToPounds(BigDecimal kilograms) {
-        return kilograms.multiply(new BigDecimal(POUNDS_PER_KILOGRAM));
-    }
-
-    /**
-     * Returns whether the item is checked, unchecked, or marked as "not buying".
-     *
-     * @return CHECKED, UNCHECKED, or NOT_BUYING
-     */
     public int getStatus() {
         return status;
     }
 
-    /**
-     * Sets the status of the item.
-     *
-     * @param status CHECKED, UNCHECKED, or NOT_BUYING
-     */
     public void setStatus(int status) {
         this.status = status;
     }
 
-    public String getItemName() {
-        return itemName;
+    /**
+     * Returns either the price per unit if the item is priced by number of units, or the price per
+     * kilogram if the item is priced by weight.
+     *
+     * @return The price per unit or the price per kilogram, whichever is applicable to this item
+     */
+    public BigDecimal getBasePrice() {
+        return basePrice;
     }
 
     /**
-     * Returns the quantity of this item if it is priced based on quantity, or 0 if it is priced
-     * based on weight.
+     * Sets the base price of this item, that is, the price per unit if the item is priced by
+     * number of units, or the price per kilogram if the item is priced by weight..
      *
-     * @return The number of units of this item, or 0 if the item is priced per weight
+     * @param basePrice The price per unit or the price per kilogram, whichever is applicable to
+     *                  this item
      */
+    public void setBasePrice(BigDecimal basePrice) {
+        this.basePrice = basePrice;
+    }
+
+    /**
+     * Sets the base price of this item based on the price per pound. The item must be priced per
+     * weight.
+     *
+     * @param pricePerPound The price per pound of the item
+     */
+    public void setPricePerPound(BigDecimal pricePerPound) {
+        if (perUnitOrPerWeight == PER_UNIT) {
+            throw new IllegalStateException("Item must be priced per weight, not per unit.");
+        }
+        basePrice = pricePerPound.multiply(POUNDS_PER_KILOGRAM);
+    }
+
+    /**
+     * Returns the ID of this item. This is used so that a persisted array can be used to determine
+     * the correct order of the items in the list.
+     *
+     * @return The ID of this item
+     */
+    public int getId() {
+        return id;
+    }
+
+    /**
+     * This method is only to be used by the Room database. Do not call this method, or else errors
+     * will occur.
+     *
+     * @param id This method is only to be used by the Room database. Do not call this method, or
+     *           else errors will occur.
+     */
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public int getQuantity() {
         return quantity;
     }
@@ -221,45 +186,53 @@ public class ShoppingListItem {
         this.quantity = quantity;
     }
 
-    /**
-     * Returns the weight of this item in kilograms if it is priced based on weight, or 0 if it is
-     * priced based on quantity.
-     *
-     * @return The weight of this item in kilograms, or 0 if the item is priced per quantity
-     */
     public BigDecimal getWeightInKilograms() {
         return weightInKilograms;
     }
 
-    /**
-     * Sets the weight of this item to the specified weight in kilograms.
-     *
-     * @param weight The weight to be set
-     */
-    public void setWeightInKilograms(BigDecimal weight) {
-        this.weightInKilograms = weight;
+    public void setWeightInKilograms(BigDecimal weightInKilograms) {
+        this.weightInKilograms = weightInKilograms;
     }
 
     /**
-     * Returns the weight of this item in pounds if it is priced based on weight, or 0 if it is
-     * priced based on quantity.
+     * Returns the weight of this item converted to pounds.
      *
-     * @return the weight of this item in pounds
+     * @return The weight of this item converted to pounds
      */
     public BigDecimal getWeightInPounds() {
-        return weightInKilograms.multiply(new BigDecimal(POUNDS_PER_KILOGRAM));
+        return weightInKilograms.multiply(POUNDS_PER_KILOGRAM);
+    }
+
+    /**
+     * Given the item's weight in pounds, sets the item's weight. Note that this is the same as
+     * setWeightInPounds(pounds, 0).
+     *
+     * @param pounds The item's weight in pounds
+     */
+    public void setWeightInPounds(BigDecimal pounds) {
+        weightInKilograms = pounds.multiply(KILOGRAMS_PER_POUND);
+    }
+
+    /**
+     * Given the item's weight in pounds and ounces, sets the item's weight. Note that
+     * setWeightInPounds(pounds, 0) is the same as setWeightInPounds(pounds).
+     *
+     * @param pounds The pound part of the item's weight
+     * @param ounces The ounce part of the item's weight
+     */
+    public void setWeightInPounds(BigDecimal pounds, int ounces) {
+        setWeightInPounds(
+                pounds.add(
+                        new BigDecimal(ounces)
+                                .divide(new BigDecimal(OUNCES_PER_POUND))
+                )
+        );
     }
 
     public boolean isPerUnitOrPerWeight() {
         return perUnitOrPerWeight;
     }
 
-    /**
-     * Sets whether the item is priced per unit or per weight.
-     *
-     * @param perUnitOrPerWeight PER_UNIT or PER_WEIGHT, depending on whether the item is priced per
-     *                           unit or per weight
-     */
     public void setPerUnitOrPerWeight(boolean perUnitOrPerWeight) {
         this.perUnitOrPerWeight = perUnitOrPerWeight;
     }
@@ -269,79 +242,43 @@ public class ShoppingListItem {
     }
 
     public boolean hasCondition() {
-        return condition != null && !condition.equals("");
+        return condition != null;
     }
 
-    /**
-     * Returns the condition under which the user is allowed to buy the item, or null if no
-     * condition is specified.
-     *
-     * @return the condition under which the user is allowed to buy the item, or null if no
-     * condition is specified
-     */
+    @Nullable
     public String getCondition() {
         return condition;
     }
 
     /**
-     * If priced per unit, returns the price per unit. Otherwise, returns the price per kilogram.
+     * Calculates and returns the total price of this item without tax.
      *
-     * @return price per unit or price per kilogram
+     * @return The total price of this item without tax
      */
-    public BigDecimal getPricePerUnit() {
-        return pricePerUnit.setScale(2, RoundingMode.HALF_UP);
+    private BigDecimal getTotalPriceWithoutTax() {
+        if (perUnitOrPerWeight == PER_UNIT) {
+            return basePrice.multiply(new BigDecimal(quantity));
+        } else {    // I know I don't need the "else", but this makes it more clear
+            return basePrice.multiply(weightInKilograms);
+        }
     }
 
     /**
-     * Sets the price per unit or the price per kilogram of this item (which one of the two depends
-     * on whether the item is priced per unit or per weight).
+     * Returns the tax of this item. This is not the same as the static method getTax(price).
      *
-     * @param pricePerUnit The price per unit or price per kilogram
+     * @return The tax of this item
      */
-    public void setPricePerUnit(BigDecimal pricePerUnit) {
-        this.pricePerUnit = pricePerUnit;
+    public BigDecimal getTax() {
+        return getTax(this.getTotalPriceWithoutTax());
     }
 
     /**
-     * Returns the total price of all units or weight of this item.
+     * Returns the total price of this item including tax.
      *
      * @return The total price of this item
      */
     public BigDecimal getTotalPrice() {
-        return getTaxAdjustedPrice(getTotalPriceWithoutTax());
-    }
-
-    /**
-     * Returns the total price of this item before taxes.
-     *
-     * @return The total price of this item before taxes
-     */
-    public BigDecimal getTotalPriceWithoutTax() {
-
-        return perUnitOrPerWeight == PER_UNIT ?
-                pricePerUnit.multiply(new BigDecimal(quantity)) :
-                pricePerUnit.multiply(weightInKilograms);
-    }
-
-    /**
-     * Sets the price per kilogram of this item given the price per pound.
-     *
-     * @param pricePerPound The price per pound
-     */
-    public void setPricePerPound(BigDecimal pricePerPound) {
-        this.pricePerUnit = pricePerPound.multiply(
-                new BigDecimal(POUNDS_PER_KILOGRAM));
-    }
-
-    /**
-     * Resets this item, setting its status to UNCHECKED and setting all values to 0.
-     */
-    public void reset() {
-        status = UNCHECKED;
-        pricePerUnit = new BigDecimal("0");
-        quantity = 0;
-        weightInKilograms = new BigDecimal(0);
-        perUnitOrPerWeight = PER_UNIT;
+        return getTotalPriceWithoutTax().add(this.getTax());
     }
 
 }

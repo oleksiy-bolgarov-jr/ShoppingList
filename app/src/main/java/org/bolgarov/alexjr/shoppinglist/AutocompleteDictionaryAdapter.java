@@ -71,7 +71,7 @@ public class AutocompleteDictionaryAdapter
             // Sort the list alphabetically if the API level is correct
             mAutocompleteEntries.sort(String::compareToIgnoreCase);
         }
-        notifyDataSetChanged();
+        onDataChanged();
     }
 
     /**
@@ -86,26 +86,33 @@ public class AutocompleteDictionaryAdapter
                 // Sort the list alphabetically if the API level is correct
                 mAutocompleteEntries.sort(String::compareToIgnoreCase);
             }
-            notifyDataSetChanged();
+            onDataChanged();
         }
     }
 
     public void deleteEntry(String entry) {
         mAutocompleteEntries.remove(entry);
-        notifyDataSetChanged();
+        onDataChanged();
     }
 
     public void deleteAllEntries() {
         mAutocompleteEntries.clear();
-        notifyDataSetChanged();
+        onDataChanged();
     }
 
-    public boolean entryListIsEmpty() {
+    private boolean entryListIsEmpty() {
         return mAutocompleteEntries.isEmpty();
+    }
+
+    private void onDataChanged() {
+        mClickHandler.switchViews(entryListIsEmpty());
+        notifyDataSetChanged();
     }
 
     public interface AutocompleteDictionaryOnClickHandler {
         void onItemClick(int position);
+
+        void switchViews(boolean dictionaryIsEmpty);
     }
 
     public class AutocompleteViewHolder extends RecyclerView.ViewHolder

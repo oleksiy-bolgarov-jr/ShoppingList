@@ -31,11 +31,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
-import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntry;
 import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntryDao;
+import org.bolgarov.alexjr.shoppinglist.dialogs.autocomplete.AddEntryDialogFragment;
+import org.bolgarov.alexjr.shoppinglist.dialogs.autocomplete.AutocompleteDictionaryAdapterHolder;
+import org.bolgarov.alexjr.shoppinglist.dialogs.autocomplete.DeleteAllEntriesDialogFragment;
+import org.bolgarov.alexjr.shoppinglist.dialogs.autocomplete.DeleteEntryDialogFragment;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -43,7 +44,8 @@ import java.util.Objects;
 
 public class AutocompleteDictionaryActivity
         extends AppCompatActivity
-        implements AutocompleteDictionaryAdapter.AutocompleteDictionaryOnClickHandler {
+        implements AutocompleteDictionaryAdapter.AutocompleteDictionaryOnClickHandler,
+        AutocompleteDictionaryAdapterHolder {
     private AppDatabase db;
 
     private AutocompleteDictionaryAdapter mAdapter;
@@ -79,7 +81,7 @@ public class AutocompleteDictionaryActivity
 
         switchViews(mAdapter.getItemCount() == 0);
 
-        executeRetrieveEntriesAction();
+        new RetrieveEntriesTask(this).execute();
     }
 
     @Override
@@ -92,13 +94,8 @@ public class AutocompleteDictionaryActivity
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.delete_all_from_autocomplete:
-                new MaterialDialog.Builder(this)
-                        .title(R.string.delete_all_dialog_title)
-                        .content(R.string.autocomplete_delete_all_dialog_body)
-                        .positiveText(R.string.autocomplete_delete_all_dialog_positive)
-                        .negativeText(R.string.delete_all_dialog_negative)
-                        .onPositive((dialog, which) -> executeDeleteAllEntriesAction())
-                        .show();
+                new DeleteAllEntriesDialogFragment()
+                        .show(getSupportFragmentManager(), "DeleteAllEntriesDialogFragment");
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -108,13 +105,14 @@ public class AutocompleteDictionaryActivity
     public void onItemClick(int position) {
         List<String> entries = mAdapter.getEntryList();
         String entry = entries.get(position);
-        new MaterialDialog.Builder(this)
-                .title(entry)
-                .content(R.string.autocomplete_delete_entry_dialog_body)
-                .positiveText(R.string.autocomplete_delete_entry_dialog_positive)
-                .negativeText(R.string.autocomplete_delete_entry_dialog_negative)
-                .onPositive((dialog, which) -> executeDeleteEntryAction(entry))
-                .show();
+        DeleteEntryDialogFragment dialog = new DeleteEntryDialogFragment();
+        dialog.setEntry(entry);
+        dialog.show(getSupportFragmentManager(), "DeleteEntryDialogFragment");
+    }
+
+    @Override
+    public AutocompleteDictionaryAdapter getAdapter() {
+        return mAdapter;
     }
 
     /**
@@ -123,7 +121,7 @@ public class AutocompleteDictionaryActivity
      *
      * @param dictionaryIsEmpty true iff the autocomplete dictionary is empty
      */
-    private void switchViews(boolean dictionaryIsEmpty) {
+    public void switchViews(boolean dictionaryIsEmpty) {
         if (dictionaryIsEmpty) {
             mRecyclerView.setVisibility(View.GONE);
             mNoEntriesDisplay.setVisibility(View.VISIBLE);
@@ -134,36 +132,13 @@ public class AutocompleteDictionaryActivity
     }
 
     private void onAddEntryButtonClick() {
-        new MaterialDialog.Builder(this)
-                .title(R.string.autocomplete_add_entry_dialog_title)
-                .content(R.string.autocomplete_add_entry_dialog_prompt)
-                .input(R.string.autocomplete_add_entry_dialog_hint, R.string.empty, false,
-                        (dialog, input) -> executeAddEntryAction(input.toString()))
-                .positiveText(R.string.autocomplete_add_entry_dialog_positive)
-                .negativeText(R.string.autocomplete_add_entry_dialog_negative)
-                .show();
+        new AddEntryDialogFragment().show(getSupportFragmentManager(), "AddEntryDialogFragment");
     }
 
-    private void executeRetrieveEntriesAction() {
-        new RetrieveItemsTask(this).execute();
-    }
-
-    private void executeAddEntryAction(String entry) {
-        new AddEntryTask(this).execute(entry);
-    }
-
-    private void executeDeleteEntryAction(String entry) {
-        new DeleteEntryTask(this).execute(entry);
-    }
-
-    private void executeDeleteAllEntriesAction() {
-        new DeleteAllEntriesTask(this).execute();
-    }
-
-    private static class RetrieveItemsTask extends AsyncTask<Void, Void, List<String>> {
+    private static class RetrieveEntriesTask extends AsyncTask<Void, Void, List<String>> {
         private final WeakReference<AutocompleteDictionaryActivity> ref;
 
-        RetrieveItemsTask(AutocompleteDictionaryActivity context) {
+        RetrieveEntriesTask(AutocompleteDictionaryActivity context) {
             ref = new WeakReference<>(context);
         }
 
@@ -192,89 +167,8 @@ public class AutocompleteDictionaryActivity
 
             activity.mAdapter.setEntryList(results);
             activity.mLoadingDisplay.setVisibility(View.GONE);
-            activity.switchViews(results.isEmpty());
-        }
-    }
-
-    private static class AddEntryTask extends AsyncTask<String, Void, String> {
-        private final WeakReference<AutocompleteDictionaryActivity> ref;
-
-        AddEntryTask(AutocompleteDictionaryActivity context) {
-            ref = new WeakReference<>(context);
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            AutocompleteDictionaryActivity activity = ref.get();
-
-            AutocompleteEntryDao dao = activity.db.autocompleteEntryDao();
-            String entryName = strings[0];
-            AutocompleteEntry entry = new AutocompleteEntry(entryName);
-            dao.insertAll(entry);
-
-            return entryName;
-        }
-
-        @Override
-        protected void onPostExecute(String insertedEntryName) {
-            super.onPostExecute(insertedEntryName);
-            AutocompleteDictionaryActivity activity = ref.get();
-
-            activity.mAdapter.addEntry(insertedEntryName);
-            activity.switchViews(activity.mAdapter.entryListIsEmpty());
-        }
-    }
-
-    private static class DeleteEntryTask extends AsyncTask<String, Void, String> {
-        private final WeakReference<AutocompleteDictionaryActivity> ref;
-
-        DeleteEntryTask(AutocompleteDictionaryActivity context) {
-            ref = new WeakReference<>(context);
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            AutocompleteDictionaryActivity activity = ref.get();
-            AutocompleteEntryDao dao = activity.db.autocompleteEntryDao();
-            String entryName = strings[0];
-            AutocompleteEntry entry = dao.getEntry(entryName);
-            dao.delete(entry);
-
-            return entryName;
-        }
-
-        @Override
-        protected void onPostExecute(String deletedEntryName) {
-            super.onPostExecute(deletedEntryName);
-            AutocompleteDictionaryActivity activity = ref.get();
-
-            activity.mAdapter.deleteEntry(deletedEntryName);
-            activity.switchViews(activity.mAdapter.entryListIsEmpty());
-        }
-    }
-
-    private static class DeleteAllEntriesTask extends AsyncTask<Void, Void, Void> {
-        private final WeakReference<AutocompleteDictionaryActivity> ref;
-
-        DeleteAllEntriesTask(AutocompleteDictionaryActivity context) {
-            ref = new WeakReference<>(context);
-        }
-
-        @Override
-        protected Void doInBackground(Void... nothing) {
-            AutocompleteDictionaryActivity activity = ref.get();
-            AutocompleteEntryDao dao = activity.db.autocompleteEntryDao();
-            dao.deleteAllEntries();
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void nothing) {
-            super.onPostExecute(nothing);
-            AutocompleteDictionaryActivity activity = ref.get();
-
-            activity.mAdapter.deleteAllEntries();
-            activity.switchViews(activity.mAdapter.entryListIsEmpty());
+            // mRecyclerView and mNoEntriesDisplay will have their visibilities set appropriately
+            // by mAdapter.setEntryList(results)
         }
     }
 }

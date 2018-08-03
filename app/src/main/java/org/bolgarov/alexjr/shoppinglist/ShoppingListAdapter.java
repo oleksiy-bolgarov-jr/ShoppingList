@@ -32,9 +32,8 @@ import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.dialogs.DeleteItemDialogFragment;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -43,94 +42,75 @@ import java.util.List;
 
 public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapter.SLAViewHolder> {
 
-    private final Context mContext;
+    private static final String TAG = ShoppingListAdapter.class.getSimpleName();
 
     private static final int CHECKED_ITEM_BACKGROUND_COLOR = 0x40000000;
     private static final int NOT_BUYING_ITEM_BACKGROUND_COLOR = 0x40F44336;
     private static final int NOT_BUYING_ITEM_TEXT_COLOR = 0xFFF44336;
+
+    private final Context mContext;
+
     private final ShoppingListAdapterOnClickHandler mClickHandler;
-    private final List<ShoppingListItem> mUncheckedItems = new ArrayList<>();
-    private final List<ShoppingListItem> mCheckedItems = new ArrayList<>();
-    private final List<ShoppingListItem> mNotBuyingItems = new ArrayList<>();
-    // Used to keep the order correct if any of the items are moved around
+
     private List<ShoppingListItem> mAllItems = new ArrayList<>();
+    private List<ShoppingListItem> mUncheckedItems = new ArrayList<>(),
+            mCheckedItems = new ArrayList<>(),
+            mNotBuyingItems = new ArrayList<>();
 
     ShoppingListAdapter(ShoppingListAdapterOnClickHandler handler, Context context) {
         mClickHandler = handler;
         mContext = context;
     }
 
+    /**
+     * Enables or disables strikethrough on the given TextView.
+     *
+     * @param tv            The TextView to be affected
+     * @param strikeThrough True iff the given TextView should have strikethrough enabled
+     */
+    private static void setStrikeThrough(TextView tv, boolean strikeThrough) {
+        if (strikeThrough) {
+            tv.setPaintFlags(tv.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+        } else {
+            tv.setPaintFlags(tv.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+        }
+    }
+
     @NonNull
     @Override
     public SLAViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         Context context = parent.getContext();
-        int id = R.layout.item_shopping_list;
         LayoutInflater inflater = LayoutInflater.from(context);
-        View view = inflater.inflate(id, parent, false);
+        View view = inflater.inflate(R.layout.item_shopping_list, parent, false);
         return new SLAViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull SLAViewHolder holder, int position) {
         List<ShoppingListItem> allItems = getAllItemsOrderedByStatus();
-        ShoppingListItem currentShoppingListItem = allItems.get(position);
-        String itemName = currentShoppingListItem.getItemName();
-        if (currentShoppingListItem.isOptional()) {
+        ShoppingListItem currentItem = allItems.get(position);
+        String itemName = currentItem.getName();
+        holder.mItemNameTextView.setText(itemName);
+        if (currentItem.isOptional()) {
             itemName += "*";
         }
-        if (currentShoppingListItem.hasCondition()) {
+        if (currentItem.hasCondition()) {
             itemName += mContext.getString(R.string.dagger);
         }
         holder.mItemNameTextView.setText(itemName);
 
-        switch (currentShoppingListItem.getStatus()) {
+        switch (currentItem.getStatus()) {
             case ShoppingListItem.CHECKED:
                 holder.mContainingLinearLayout.setBackgroundColor(CHECKED_ITEM_BACKGROUND_COLOR);
                 holder.mItemNameTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
                 holder.mPriceTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
                 setStrikeThrough(holder.mItemNameTextView, false);
 
-                String calculation;
-                if (currentShoppingListItem.isPerUnitOrPerWeight() == ShoppingListItem.PER_UNIT
-                        && mClickHandler.isTaxIncluded()) {
-                    calculation = mContext.getString(
-                            R.string.item_placeholder_calc_per_unit,
-                            currentShoppingListItem.getPricePerUnit(),
-                            currentShoppingListItem.getQuantity(),
-                            ShoppingListItem.getTax(currentShoppingListItem.getTotalPriceWithoutTax())
-                    );
-                } else if (currentShoppingListItem.isPerUnitOrPerWeight() == ShoppingListItem.PER_UNIT
-                        && !mClickHandler.isTaxIncluded()) {
-                    calculation = mContext.getString(
-                            R.string.item_placeholder_calc_per_unit_no_tax,
-                            currentShoppingListItem.getPricePerUnit(),
-                            currentShoppingListItem.getQuantity()
-                    );
-                } else if (currentShoppingListItem.isPerUnitOrPerWeight() == ShoppingListItem.PER_WEIGHT
-                        && mClickHandler.isTaxIncluded()) {
-                    String format =
-                            mContext.getString(R.string.item_decimal_format_weight);
-                    DecimalFormat df = new DecimalFormat(format);
-                    calculation = mContext.getString(
-                            R.string.item_placeholder_calc_per_weight,
-                            currentShoppingListItem.getPricePerUnit(),
-                            df.format(currentShoppingListItem.getWeightInKilograms()),
-                            ShoppingListItem.getTax(currentShoppingListItem.getTotalPriceWithoutTax())
-                    );
-                } else {
-                    String format =
-                            mContext.getString(R.string.item_decimal_format_weight);
-                    DecimalFormat df = new DecimalFormat(format);
-                    calculation = mContext.getString(
-                            R.string.item_placeholder_calc_per_weight_no_tax,
-                            currentShoppingListItem.getPricePerUnit(),
-                            df.format(currentShoppingListItem.getWeightInKilograms())
-                    );
-                }
-                holder.mPriceCalculationTextView.setText(calculation);
+                setCalculationView(holder, currentItem);
 
-                String priceText = mContext.getString(
-                        R.string.item_placeholder_price, currentShoppingListItem.getTotalPrice());
+                String priceText =
+                        mContext.getString(R.string.item_placeholder_price,
+                                currentItem.getTotalPrice());
                 holder.mPriceTextView.setText(priceText);
                 break;
             case ShoppingListItem.NOT_BUYING:
@@ -141,7 +121,7 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
                 holder.mPriceCalculationTextView.setText("");
                 holder.mPriceTextView.setText("");
                 break;
-            default:
+            default:    // ShoppingListItem.UNCHECKED
                 holder.mContainingLinearLayout.setBackground(holder.DEFAULT_BACKGROUND);
                 holder.mItemNameTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
                 holder.mPriceTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
@@ -155,50 +135,65 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
             PopupMenu popup = new PopupMenu(view.getContext(), holder.mOptionsButton);
             popup.getMenuInflater().inflate(R.menu.menu_item_popup, popup.getMenu());
             popup.setOnMenuItemClickListener(menuItem -> {
-                if (menuItem.getItemId() == R.id.delete_item) {
-                    delete(view.getContext(), currentShoppingListItem);
-                    return true;
+                switch (menuItem.getItemId()) {
+                    case R.id.delete_item:
+                        onDeleteItemClick(currentItem);
+                        return true;
+                    default:
+                        return false;
                 }
-                return false;
             });
             popup.show();
         });
     }
 
-    public void onDataChanged() {
-        mUncheckedItems.clear();
-        mCheckedItems.clear();
-        mNotBuyingItems.clear();
-        int optionalItems = 0;
-        int conditionedItems = 0;
-        for (ShoppingListItem item : mAllItems) {
-            switch (item.getStatus()) {
-                case ShoppingListItem.UNCHECKED:
-                    mUncheckedItems.add(item);
-                    break;
-                case ShoppingListItem.CHECKED:
-                    mCheckedItems.add(item);
-                    break;
-                default:    // ShoppingListItem.NOT_BUYING
-                    mNotBuyingItems.add(item);
-                    break;
+    /**
+     * Helper method to set the calculation TextView for a checked item. The item must have status
+     * CHECKED.
+     *
+     * @param holder The SLAViewHolder passed to onBindViewHolder
+     * @param item   The ShoppingListItem that was selected in onBindViewHolder
+     */
+    private void setCalculationView(SLAViewHolder holder, ShoppingListItem item) {
+        if (item.getStatus() != ShoppingListItem.CHECKED) {
+            throw new IllegalArgumentException("The item must be CHECKED.");
+        }
+
+        String calculation;
+        if (item.isPerUnitOrPerWeight() == ShoppingListItem.PER_UNIT) {
+            if (mClickHandler.isTaxIncluded()) {
+                calculation = mContext.getString(
+                        R.string.item_placeholder_calc_per_unit,
+                        item.getBasePrice(),
+                        item.getQuantity(),
+                        item.getTax()
+                );
+            } else {
+                calculation = mContext.getString(
+                        R.string.item_placeholder_calc_per_unit_no_tax,
+                        item.getBasePrice(),
+                        item.getQuantity()
+                );
             }
-            if (item.isOptional()) {
-                optionalItems++;
-            }
-            if (item.hasCondition()) {
-                conditionedItems++;
+        } else {    // item.isPerUnitOrPerWeight() == ShoppingListItem.PER_WEIGHT
+            String format = mContext.getString(R.string.item_decimal_format_weight);
+            DecimalFormat df = new DecimalFormat(format);
+            if (mClickHandler.isTaxIncluded()) {
+                calculation = mContext.getString(
+                        R.string.item_placeholder_calc_per_weight,
+                        item.getBasePrice(),
+                        df.format(item.getWeightInKilograms()),
+                        item.getTax()
+                );
+            } else {
+                calculation = mContext.getString(
+                        R.string.item_placeholder_calc_per_weight_no_tax,
+                        item.getBasePrice(),
+                        df.format(item.getWeightInKilograms())
+                );
             }
         }
-        mClickHandler.updateTotalPrice(getTotalPrice());
-        mClickHandler.switchViews(mAllItems.isEmpty());
-        mClickHandler.showFootnotes(optionalItems > 0, conditionedItems > 0);
-        notifyDataSetChanged();
-    }
-
-    public void deleteAll() {
-        mAllItems.clear();
-        onDataChanged();
+        holder.mPriceCalculationTextView.setText(calculation);
     }
 
     @Override
@@ -211,15 +206,47 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
         onDataChanged();
     }
 
-    public List<ShoppingListItem> getAllItems() {
-        return mAllItems;
+    /**
+     * When data is changed (e.g. when an item is added or removed), please use this method. Please
+     * do not use notifyDataSetChanged(), because it does not handle the change properly for this
+     * purpose.
+     */
+    public void onDataChanged() {
+        boolean optionalItemsExist = false, conditionedItemsExist = false;
+        mUncheckedItems.clear();
+        mCheckedItems.clear();
+        mNotBuyingItems.clear();
+        for (ShoppingListItem item : mAllItems) {
+            switch (item.getStatus()) {
+                case ShoppingListItem.UNCHECKED:
+                    mUncheckedItems.add(item);
+                    break;
+                case ShoppingListItem.CHECKED:
+                    mCheckedItems.add(item);
+                    break;
+                default:    // ShoppingListItem.NOT_BUYING
+                    mNotBuyingItems.add(item);
+                    break;
+            }
+            if (item.isOptional()) optionalItemsExist = true;
+            if (item.hasCondition()) conditionedItemsExist = true;
+        }
+
+        mClickHandler.updateTotalPrice(getTotalPrice());
+
+        mClickHandler.switchViews(mAllItems.isEmpty());
+
+        mClickHandler.showFootnotes(optionalItemsExist, conditionedItemsExist);
+
+        notifyDataSetChanged();
     }
 
-    public void setAllItems(List<ShoppingListItem> items) {
-        mAllItems = items;
-        onDataChanged();
-    }
-
+    /**
+     * Returns the list of all shopping list items ordered by status, that is, all unchecked items
+     * followed by all checked items followed by all items marked "not buying".
+     *
+     * @return The list of all shopping list items ordered by status
+     */
     public List<ShoppingListItem> getAllItemsOrderedByStatus() {
         List<ShoppingListItem> result = new ArrayList<>();
         result.addAll(mUncheckedItems);
@@ -228,50 +255,42 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
         return result;
     }
 
+    private void onDeleteItemClick(ShoppingListItem item) {
+        DeleteItemDialogFragment dialog = new DeleteItemDialogFragment();
+        dialog.setItem(item);
+        dialog.show(((MainActivity) mContext).getSupportFragmentManager(), "AddItemDialogFragment");
+    }
+
+    public void deleteItem(ShoppingListItem item) {
+        mAllItems.remove(item);
+        onDataChanged();
+    }
+
+    public void deleteAll() {
+        mAllItems.clear();
+        onDataChanged();
+    }
+
     public BigDecimal getTotalPrice() {
-        BigDecimal price = new BigDecimal("0");
+        BigDecimal result = BigDecimal.ZERO;
         for (ShoppingListItem item : mCheckedItems) {
-            price = price.add(item.getTotalPrice());
+            result = result.add(item.getTotalPrice());
         }
-        return price;
-    }
-
-    private void delete(Context context, ShoppingListItem item) {
-        new MaterialDialog.Builder(context)
-                .title(item.getItemName())
-                .content(R.string.delete_item_dialog_body)
-                .positiveText(R.string.delete_item_dialog_positive)
-                .negativeText(R.string.delete_item_dialog_negative)
-                .onPositive((dialog, which) -> {
-                    mAllItems.remove(item);
-                    mClickHandler.updateTotalPrice(getTotalPrice());
-                    onDataChanged();
-                })
-                .show();
-    }
-
-    private void setStrikeThrough(TextView tv, boolean strikeThrough) {
-        if (strikeThrough) {
-            tv.setPaintFlags(tv.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-        } else {
-            tv.setPaintFlags(tv.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-        }
+        return result;
     }
 
     public interface ShoppingListAdapterOnClickHandler {
         void onItemClick(int position);
 
-        void updateTotalPrice(BigDecimal price);
-
         void switchViews(boolean listIsEmpty);
 
-        boolean isTaxIncluded();
+        void updateTotalPrice(BigDecimal price);
 
-        void showFootnotes(boolean optionalItemsExist, boolean conditionedItemsExist);
+        void showFootnotes(boolean optionalItemExist, boolean conditionedItemExist);
+        boolean isTaxIncluded();
     }
 
-    public class SLAViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-
+    class SLAViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         final Drawable DEFAULT_BACKGROUND;
         final int DEFAULT_TEXT_COLOR;
 
@@ -283,6 +302,7 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
 
         SLAViewHolder(View view) {
             super(view);
+
             mContainingLinearLayout = view.findViewById(R.id.ll_shopping_list_item);
             mItemNameTextView = view.findViewById(R.id.tv_shopping_list_item);
             mPriceCalculationTextView = view.findViewById(R.id.tv_item_price_calculations);
@@ -297,9 +317,8 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
 
         @Override
         public void onClick(View v) {
-            int adapterPosition = getAdapterPosition();
-            mClickHandler.onItemClick(adapterPosition);
+            int clickPosition = getAdapterPosition();
+            mClickHandler.onItemClick(clickPosition);
         }
     }
-
 }

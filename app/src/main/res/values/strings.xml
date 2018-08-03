@@ -21,6 +21,8 @@
     <string name="app_name">Shopping List</string>
     <string name="title_activity_autocomplete_dictionary">Autocomplete Dictionary</string>
 
+    <string name="edit_text_hint_placeholder">Replace this with your own hint…</string>
+
     <!-- Values for main activity -->
     <string name="main_activity_no_items">You have no items in your shopping list.
         \nPlease add an item by pressing <b>+</b>.</string>
@@ -32,7 +34,8 @@
     <string name="main_activity_footer_dagger_footnote">&#8224; Has condition</string>
 
     <!-- Main activity placeholder strings -->
-    <string name="main_activity_placeholder_footer_total">$%.2f / $%.2f</string>
+    <string name="main_activity_placeholder_footer_total_with_budget">$%.2f / $%.2f</string>
+    <string name="main_activity_placeholder_footer_total_no_budget">$%.2f</string>
 
     <!-- Values for main menu -->
     <string name="main_menu_option_settings">Settings</string>
@@ -63,9 +66,9 @@
     </string>
     <string name="add_new_item_dialog_optional_prompt">Make this item optional</string>
     <string name="add_new_item_dialog_condition_hint">(Optional) Condition to buy item</string>
-    <string name="add_new_item_dialog_positive">Add another</string>
+    <string name="add_new_item_dialog_positive">Add &amp; finish</string>
     <string name="add_new_item_dialog_negative">Cancel</string>
-    <string name="add_new_item_dialog_neutral">Add &amp; finish</string>
+    <string name="add_new_item_dialog_neutral">Add another</string>
 
     <!-- Values for item options -->
     <string name="shopping_list_item_description_options">Options</string>
