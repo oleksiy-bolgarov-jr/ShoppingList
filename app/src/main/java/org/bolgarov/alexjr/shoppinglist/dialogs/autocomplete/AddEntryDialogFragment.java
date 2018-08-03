@@ -57,7 +57,7 @@ public class AddEntryDialogFragment extends DialogFragment {
 
         builder.setTitle(R.string.autocomplete_add_entry_dialog_title)
                 .setMessage(R.string.autocomplete_add_entry_dialog_prompt)
-                .setView(R.layout.dialog_edit_text)
+                .setView(view)
                 .setPositiveButton(
                         R.string.autocomplete_add_entry_dialog_positive,
                         (dialog, which) -> {

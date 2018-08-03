@@ -145,7 +145,6 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
 
         builder.setTitle(mItem.getName())
                 .setView(view)
-                .setMessage("Fuck you and your mother")
                 .setPositiveButton(
                         R.string.item_dialog_unchecked_positive,
                         (dialog, which) -> onPositive()
