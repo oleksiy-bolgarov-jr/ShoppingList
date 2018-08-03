@@ -18,7 +18,7 @@
   -->
 
 <resources>
-    <string name="app_name">Shit We Need</string>
+    <string name="app_name">Shopping List</string>
     <string name="title_activity_autocomplete_dictionary">Autocomplete Dictionary</string>
 
     <string name="edit_text_hint_placeholder">Replace this with your own hint…</string>
