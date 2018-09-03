@@ -70,20 +70,26 @@ public class ShoppingListItem {
     private BigDecimal weightInKilograms = BigDecimal.ZERO;
     @ColumnInfo(name = "per_unit_or_per_weight")
     private boolean perUnitOrPerWeight = PER_UNIT;
+    @ColumnInfo(name = "order_in_list")
+    private int orderInList;
 
     /**
      * Creates a new ShoppingListItem with the given name, optionality, and condition. All other
      * associated values (price, weight, etc.) are set to 0.
      *
-     * @param name      The name of the item (e.g. "Milk", "Eggs", etc.)
-     * @param optional  True iff the item is optional.
-     * @param condition A condition under which the user is allowed to buy the item if the user
-     *                  wishes to specify such a condition, null otherwise.
+     * @param name        The name of the item (e.g. "Milk", "Eggs", etc.)
+     * @param optional    True iff the item is optional.
+     * @param condition   A condition under which the user is allowed to buy the item if the user
+     *                    wishes to specify such a condition, null otherwise.
+     * @param orderInList The order that this item appears in the list, where the first item has
+     *                    order 0.
      */
-    public ShoppingListItem(String name, boolean optional, @Nullable String condition) {
+    public ShoppingListItem(String name, boolean optional, @Nullable String condition,
+                            int orderInList) {
         this.name = name;
         this.optional = optional;
         this.condition = condition;
+        this.orderInList = orderInList;
     }
 
     public static void setTaxRate(BigDecimal taxRate) {
@@ -221,6 +227,7 @@ public class ShoppingListItem {
      * @param ounces The ounce part of the item's weight
      */
     public void setWeightInPounds(BigDecimal pounds, int ounces) {
+        //noinspection BigDecimalMethodWithoutRoundingCalled
         setWeightInPounds(
                 pounds.add(
                         new BigDecimal(ounces)
@@ -248,6 +255,14 @@ public class ShoppingListItem {
     @Nullable
     public String getCondition() {
         return condition;
+    }
+
+    public int getOrderInList() {
+        return orderInList;
+    }
+
+    public void setOrderInList(int orderInList) {
+        this.orderInList = orderInList;
     }
 
     /**

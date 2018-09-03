@@ -29,7 +29,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
@@ -38,6 +37,7 @@ import org.bolgarov.alexjr.shoppinglist.dialogs.DeleteItemDialogFragment;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapter.SLAViewHolder> {
@@ -90,7 +90,6 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
         List<ShoppingListItem> allItems = getAllItemsOrderedByStatus();
         ShoppingListItem currentItem = allItems.get(position);
         String itemName = currentItem.getName();
-        holder.mItemNameTextView.setText(itemName);
         if (currentItem.isOptional()) {
             itemName += "*";
         }
@@ -104,6 +103,7 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
                 holder.mContainingLinearLayout.setBackgroundColor(CHECKED_ITEM_BACKGROUND_COLOR);
                 holder.mItemNameTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
                 holder.mPriceTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
+                holder.mDeleteButton.setColorFilter(null);
                 setStrikeThrough(holder.mItemNameTextView, false);
 
                 setCalculationView(holder, currentItem);
@@ -117,6 +117,7 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
                 holder.mContainingLinearLayout.setBackgroundColor(NOT_BUYING_ITEM_BACKGROUND_COLOR);
                 holder.mItemNameTextView.setTextColor(NOT_BUYING_ITEM_TEXT_COLOR);
                 holder.mPriceTextView.setTextColor(NOT_BUYING_ITEM_TEXT_COLOR);
+                holder.mDeleteButton.setColorFilter(NOT_BUYING_ITEM_TEXT_COLOR);
                 setStrikeThrough(holder.mItemNameTextView, true);
                 holder.mPriceCalculationTextView.setText("");
                 holder.mPriceTextView.setText("");
@@ -125,26 +126,14 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
                 holder.mContainingLinearLayout.setBackground(holder.DEFAULT_BACKGROUND);
                 holder.mItemNameTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
                 holder.mPriceTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
+                holder.mDeleteButton.setColorFilter(null);
                 setStrikeThrough(holder.mItemNameTextView, false);
                 holder.mPriceCalculationTextView.setText("");
                 holder.mPriceTextView.setText("");
                 break;
         }
 
-        holder.mOptionsButton.setOnClickListener(view -> {
-            PopupMenu popup = new PopupMenu(view.getContext(), holder.mOptionsButton);
-            popup.getMenuInflater().inflate(R.menu.menu_item_popup, popup.getMenu());
-            popup.setOnMenuItemClickListener(menuItem -> {
-                switch (menuItem.getItemId()) {
-                    case R.id.delete_item:
-                        onDeleteItemClick(currentItem);
-                        return true;
-                    default:
-                        return false;
-                }
-            });
-            popup.show();
-        });
+        holder.mDeleteButton.setOnClickListener(view -> onDeleteItemClick(currentItem));
     }
 
     /**
@@ -201,8 +190,13 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
         return mAllItems.size();
     }
 
-    public void addItemToEndOfShoppingList(ShoppingListItem item) {
+    public void addItem(ShoppingListItem item) {
         mAllItems.add(item);
+        onDataChanged();
+    }
+
+    public void setItemList(List<ShoppingListItem> items) {
+        mAllItems = items;
         onDataChanged();
     }
 
@@ -216,6 +210,13 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
         mUncheckedItems.clear();
         mCheckedItems.clear();
         mNotBuyingItems.clear();
+
+        // Sort the list according to the order of the items in it
+        Collections.sort(
+                mAllItems,
+                (item1, item2) -> Integer.compare(item1.getOrderInList(), item2.getOrderInList())
+        );
+
         for (ShoppingListItem item : mAllItems) {
             switch (item.getStatus()) {
                 case ShoppingListItem.UNCHECKED:
@@ -298,7 +299,7 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
         final TextView mItemNameTextView;
         final TextView mPriceCalculationTextView;
         final TextView mPriceTextView;
-        final ImageButton mOptionsButton;
+        final ImageButton mDeleteButton;
 
         SLAViewHolder(View view) {
             super(view);
@@ -307,7 +308,7 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
             mItemNameTextView = view.findViewById(R.id.tv_shopping_list_item);
             mPriceCalculationTextView = view.findViewById(R.id.tv_item_price_calculations);
             mPriceTextView = view.findViewById(R.id.tv_item_price);
-            mOptionsButton = view.findViewById(R.id.ib_shopping_list_item_options);
+            mDeleteButton = view.findViewById(R.id.ib_shopping_list_item_delete);
 
             DEFAULT_BACKGROUND = mContainingLinearLayout.getBackground();
             DEFAULT_TEXT_COLOR = mItemNameTextView.getCurrentTextColor();

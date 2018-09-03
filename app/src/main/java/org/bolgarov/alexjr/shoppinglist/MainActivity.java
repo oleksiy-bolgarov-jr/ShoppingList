@@ -98,9 +98,7 @@ public class MainActivity
 
     /*
      * TODO: Next steps:
-     * Allow items to be rearranged (and possibly edited)
-     * Improve the "delete all" option so you can delete from separate categories
-     * Try to prevent user from entering negative values
+     * Add a "delete multiple" option
      * Add a calculator to conveniently calculate price per kg given price per lb or vice versa, or price per weight/unit given total price and weight/unit
      * Add promotions (e.g. 3 for $6.00, etc.)
      * Add categories
@@ -147,6 +145,12 @@ public class MainActivity
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        new RetrieveItemsTask(this).execute();
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
@@ -158,6 +162,10 @@ public class MainActivity
             case R.id.option_delete_all:
                 DialogFragment dialog = new DeleteAllItemsDialogFragment();
                 dialog.show(getSupportFragmentManager(), "DeleteAllItemsDialogFragment");
+                return true;
+            case R.id.option_rearrange_items:
+                Intent startRearrangeActivity = new Intent(this, RearrangeItemsActivity.class);
+                startActivity(startRearrangeActivity);
                 return true;
             case R.id.option_settings:
                 Intent startSettingsActivity = new Intent(this, SettingsActivity.class);
@@ -458,11 +466,8 @@ public class MainActivity
         protected void onPostExecute(List<ShoppingListItem> shoppingListItems) {
             super.onPostExecute(shoppingListItems);
 
-            // TODO: Make items rearrangeable
             MainActivity mainActivity = ref.get();
-            for (ShoppingListItem item : shoppingListItems) {
-                mainActivity.mShoppingListAdapter.addItemToEndOfShoppingList(item);
-            }
+            mainActivity.mShoppingListAdapter.setItemList(shoppingListItems);
 
             // Hide the loading indicator and show the list of items or a message saying there are
             // no items

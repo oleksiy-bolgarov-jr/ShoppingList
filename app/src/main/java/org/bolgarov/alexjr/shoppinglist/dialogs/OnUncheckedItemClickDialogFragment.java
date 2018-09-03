@@ -159,8 +159,6 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
                 );
         Dialog dialog = builder.create();
 
-        // TODO: Implement ability to include or exclude tax
-
         mWhichRadioButtonChecked = R.id.rb_per_unit;    // This is the default one
 
         mPricingRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
@@ -266,6 +264,7 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
                         BigDecimal ounces = TextUtils.isEmpty(mOuncesEditText.getText()) ?
                                 BigDecimal.ZERO :
                                 new BigDecimal(mOuncesEditText.getText().toString());
+                        @SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
                         BigDecimal totalPounds = pounds.add(ounces.divide(OUNCES_PER_POUND));
                         priceWithoutTax = basePrice.multiply(totalPounds);
                         tax = ShoppingListItem.getTax(priceWithoutTax);

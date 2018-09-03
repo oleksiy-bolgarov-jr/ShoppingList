@@ -172,7 +172,7 @@ public class CustomSeekBarPreference extends Preference implements SeekBar.OnSee
 
     @Override
     protected Object onGetDefaultValue(TypedArray a, int index) {
-        return a.getInt(index, 0);  // TODO: Set a default value instead of 0
+        return a.getInt(index, 0);
     }
 
     @Override

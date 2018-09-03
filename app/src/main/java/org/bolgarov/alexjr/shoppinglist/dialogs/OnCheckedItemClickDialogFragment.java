@@ -163,8 +163,6 @@ public class OnCheckedItemClickDialogFragment extends DialogFragment {
                 );
         Dialog dialog = builder.create();
 
-        // TODO: Implement ability to include or exclude tax
-
         if (mItem.isPerUnitOrPerWeight() == ShoppingListItem.PER_UNIT) {
             mWhichRadioButtonChecked = R.id.rb_per_unit;
             mPerKgRadioButton.setEnabled(false);
@@ -322,6 +320,7 @@ public class OnCheckedItemClickDialogFragment extends DialogFragment {
                         BigDecimal ounces = TextUtils.isEmpty(mOuncesEditText.getText()) ?
                                 BigDecimal.ZERO :
                                 new BigDecimal(mOuncesEditText.getText().toString());
+                        @SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
                         BigDecimal totalPounds = pounds.add(ounces.divide(OUNCES_PER_POUND));
                         priceWithoutTax = basePrice.multiply(totalPounds);
                         tax = ShoppingListItem.getTax(priceWithoutTax);
@@ -430,6 +429,7 @@ public class OnCheckedItemClickDialogFragment extends DialogFragment {
     }
 
     private BigDecimal poundsToKilograms(BigDecimal pounds, BigDecimal ounces) {
+        @SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
         BigDecimal fractionalPart = ounces.divide(OUNCES_PER_POUND);
         BigDecimal totalPounds = pounds.add(fractionalPart);
         return totalPounds.multiply(KILOGRAMS_PER_POUND);

@@ -202,7 +202,7 @@ public class SettingsFragment
             BigDecimal budget = new BigDecimal((String) newValue);
             BigDecimal warningValue =
                     new BigDecimal(
-                            sp.getString(getString(R.string.key_maximum_budget_edit_text), "0"));
+                            sp.getString(getString(R.string.key_warning_fixed_edit_text), "0"));
             if (warningValue.compareTo(budget) > 0) {
                 boolean warningSet =
                         sp.getBoolean(getString(R.string.key_set_warning_checkbox), false);

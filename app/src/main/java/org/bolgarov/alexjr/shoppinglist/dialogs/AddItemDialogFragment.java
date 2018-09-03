@@ -201,7 +201,10 @@ public class AddItemDialogFragment extends DialogFragment {
                 itemName,
                 optional,
                 // Empty condition is to be treated as null
-                TextUtils.isEmpty(condition) ? null : condition
+                TextUtils.isEmpty(condition) ? null : condition,
+                // To make the order the last number, we simply get the number of already existing
+                // items, since the last item will have order n-1, where n is the number of items
+                mListener.getAdapter().getItemCount()
         );
         new AddItemTask(getContext(), mListener, saveToAutocomplete, neutral).execute(item);
     }
@@ -252,7 +255,7 @@ public class AddItemDialogFragment extends DialogFragment {
         @Override
         protected void onPostExecute(ShoppingListItem item) {
             super.onPostExecute(item);
-            listener.getAdapter().addItemToEndOfShoppingList(item);
+            listener.getAdapter().addItem(item);
 
             if (addToAutocomplete) {
                 listener.updateAutocompleteDictionary();

@@ -47,12 +47,12 @@
         android:textSize="@dimen/text_size_variable" />
 
     <ImageButton
-        android:id="@+id/ib_shopping_list_item_options"
+        android:id="@+id/ib_shopping_list_item_delete"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_gravity="center"
         android:background="?android:attr/selectableItemBackground"
-        android:contentDescription="@string/shopping_list_item_description_options"
-        android:src="@drawable/ic_more_vert_black_24dp" />
+        android:contentDescription="@string/shopping_list_item_menu_option_delete"
+        android:src="@drawable/ic_delete_black_24dp" />
 
 </LinearLayout>

@@ -20,6 +20,7 @@
 <resources>
     <string name="app_name">Shopping List</string>
     <string name="title_activity_autocomplete_dictionary">Autocomplete Dictionary</string>
+    <string name="title_activity_rearrange_items">Rearrange Mode</string>
 
     <string name="edit_text_hint_placeholder">Replace this with your own hint…</string>
 
@@ -38,6 +39,8 @@
     <string name="main_activity_placeholder_footer_total_no_budget">$%.2f</string>
 
     <!-- Values for main menu -->
+    <string name="main_menu_option_delete_all">Delete all items</string>
+    <string name="main_menu_option_rearrange_items">Rearrange items</string>
     <string name="main_menu_option_settings">Settings</string>
 
     <!-- Item view placeholder strings -->
@@ -70,8 +73,7 @@
     <string name="add_new_item_dialog_negative">Cancel</string>
     <string name="add_new_item_dialog_neutral">Add another</string>
 
-    <!-- Values for item options -->
-    <string name="shopping_list_item_description_options">Options</string>
+    <!-- Values for items in list -->
     <string name="shopping_list_item_menu_option_delete">Delete</string>
 
     <!-- Values for delete item dialog -->
@@ -214,6 +216,18 @@
     <string name="autocomplete_delete_entry_dialog_positive">Delete</string>
     <string name="autocomplete_delete_entry_dialog_negative">Cancel</string>
 
-    <!-- TODO: Delete this when no longer using -->
-    <string name="DEBUG_add_dummy_data">DEBUG: Add dummy data</string>
+    <!-- Values for rearrange view -->
+    <string name="rearrange_content_description_drag_handle">Drag handle</string>
+    <string name="rearrange_menu_option_help">Help</string>
+
+    <!-- Values for dialogs in rearrange view -->
+    <string name="rearrange_help_dialog_body">To move an item, touch the item on the left side and
+        drag it to the desired position. When you are satisfied with the order of the items, press
+        &#x2713; to save the order. To discard all changes and keep the previous order, press the
+        back button.</string>
+    <string name="rearrange_help_dialog_dismiss_button">OK</string>
+    <string name="rearrange_confirm_dialog_title">Confirm changes</string>
+    <string name="rearrange_confirm_dialog_body">Is this the order you want?</string>
+    <string name="rearrange_confirm_dialog_positive">Yes, save</string>
+    <string name="rearrange_confirm_dialog_negative">No, cancel</string>
 </resources>
