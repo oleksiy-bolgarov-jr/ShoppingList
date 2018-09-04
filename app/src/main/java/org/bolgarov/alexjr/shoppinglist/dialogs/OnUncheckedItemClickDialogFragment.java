@@ -264,6 +264,7 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
                         BigDecimal ounces = TextUtils.isEmpty(mOuncesEditText.getText()) ?
                                 BigDecimal.ZERO :
                                 new BigDecimal(mOuncesEditText.getText().toString());
+                        // Suppressed because this should never produce a non-terminating expansion.
                         @SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
                         BigDecimal totalPounds = pounds.add(ounces.divide(OUNCES_PER_POUND));
                         priceWithoutTax = basePrice.multiply(totalPounds);

@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp"
+    android:paddingTop="8dp"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".CalculatorActivity"
+    tools:showIn="@layout/activity_calculator">
+
+    <TextView
+        android:id="@+id/tv_calc_constraint_from_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/calculator_from_title"
+        android:textColor="@color/somewhat_transparent_black"
+        android:textSize="@dimen/text_size_label" />
+
+    <RadioGroup
+        android:id="@+id/rg_calculator_from"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="4dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_calc_constraint_from_title">
+
+        <RadioButton
+            android:id="@+id/rb_from_units"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checked="true"
+            android:color="@color/black"
+            android:text="@string/calculator_option_units"
+            android:textSize="@dimen/text_size_variable" />
+
+        <RadioButton
+            android:id="@+id/rb_from_kg"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:color="@color/black"
+            android:text="@string/calculator_option_kg"
+            android:textSize="@dimen/text_size_variable" />
+
+        <RadioButton
+            android:id="@+id/rb_from_lb"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:color="@color/black"
+            android:text="@string/calculator_option_lb"
+            android:textSize="@dimen/text_size_variable" />
+
+        <RadioButton
+            android:id="@+id/rb_from_litres"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:color="@color/black"
+            android:text="@string/calculator_option_litres"
+            android:textSize="@dimen/text_size_variable" />
+
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/tv_calc_constraint_to_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="18dp"
+        android:text="@string/calculator_to_title"
+        android:textColor="@color/somewhat_transparent_black"
+        android:textSize="@dimen/text_size_label"
+        app:layout_constraintTop_toBottomOf="@id/rg_calculator_from" />
+
+    <RadioGroup
+        android:id="@+id/rg_calculator_to"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="4dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_calc_constraint_to_title">
+
+        <RadioButton
+            android:id="@+id/rb_to_units"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checked="true"
+            android:color="@color/black"
+            android:text="@string/calculator_option_units"
+            android:textSize="@dimen/text_size_variable" />
+
+        <RadioButton
+            android:id="@+id/rb_to_kg"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:color="@color/black"
+            android:enabled="false"
+            android:text="@string/calculator_option_kg"
+            android:textSize="@dimen/text_size_variable" />
+
+        <RadioButton
+            android:id="@+id/rb_to_lb"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:color="@color/black"
+            android:enabled="false"
+            android:text="@string/calculator_option_lb"
+            android:textSize="@dimen/text_size_variable" />
+
+        <RadioButton
+            android:id="@+id/rb_to_litres"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:color="@color/black"
+            android:enabled="false"
+            android:text="@string/calculator_option_litres"
+            android:textSize="@dimen/text_size_variable" />
+
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/tv_calc_constraint_price_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="18dp"
+        android:text="@string/calculator_price_title"
+        android:textColor="@color/somewhat_transparent_black"
+        android:textSize="@dimen/text_size_label"
+        app:layout_constraintTop_toBottomOf="@id/rg_calculator_to" />
+
+    <LinearLayout
+        android:id="@+id/ll_calc_constraint_price_input"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingTop="4dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_calc_constraint_price_title"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent="0.5">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/price_prefix"
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_variable" />
+
+        <EditText
+            android:id="@+id/et_calculator_price"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/item_dialog_hint_price"
+            android:inputType="numberDecimal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/price_suffix"
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_variable" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_calculator_quantity_or_weight_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="18dp"
+        android:text="@string/calculator_quantity_title"
+        android:textColor="@color/somewhat_transparent_black"
+        android:textSize="@dimen/text_size_label"
+        app:layout_constraintLeft_toRightOf="@id/ll_calc_constraint_price_input"
+        app:layout_constraintTop_toBottomOf="@id/rg_calculator_to" />
+
+    <!-- Views visible when units selected in from category -->
+    <ImageButton
+        android:id="@+id/btn_calculator_decrease_quantity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/item_dialog_description_decrease_quantity"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:src="@drawable/ic_remove_black_24dp"
+        app:layout_constraintBottom_toTopOf="@id/ll_calc_constraint_price_input"
+        app:layout_constraintLeft_toRightOf="@id/ll_calc_constraint_price_input"
+        app:layout_constraintTop_toBottomOf="@id/ll_calc_constraint_price_input" />
+
+    <TextView
+        android:id="@+id/tv_calculator_quantity"
+        android:layout_width="@dimen/quantity_width"
+        android:layout_height="wrap_content"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:textSize="@dimen/text_size_variable"
+        app:layout_constraintBottom_toTopOf="@id/ll_calc_constraint_price_input"
+        app:layout_constraintLeft_toRightOf="@id/btn_calculator_decrease_quantity"
+        app:layout_constraintTop_toBottomOf="@id/ll_calc_constraint_price_input" />
+
+    <ImageButton
+        android:id="@+id/btn_calculator_increase_quantity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/item_dialog_description_increase_quantity"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:src="@drawable/ic_add_black_24dp"
+        app:layout_constraintBottom_toTopOf="@id/ll_calc_constraint_price_input"
+        app:layout_constraintLeft_toRightOf="@id/tv_calculator_quantity"
+        app:layout_constraintTop_toBottomOf="@id/ll_calc_constraint_price_input" />
+
+    <android.support.constraint.Group
+        android:id="@+id/if_from_units_selected"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="btn_calculator_decrease_quantity,
+        tv_calculator_quantity,
+        btn_calculator_increase_quantity" />
+
+    <!-- Views visible when kg selected in from category -->
+    <LinearLayout
+        android:id="@+id/if_from_kg_selected"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintLeft_toRightOf="@id/ll_calc_constraint_price_input"
+        app:layout_constraintTop_toBottomOf="@id/tv_calculator_quantity_or_weight_title"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent="0.5">
+
+        <EditText
+            android:id="@+id/et_calculator_kg"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/item_dialog_hint_weight"
+            android:inputType="numberDecimal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/kg"
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_variable" />
+
+    </LinearLayout>
+
+    <!-- Views visible when lb selected in from category -->
+    <LinearLayout
+        android:id="@+id/if_from_lb_selected"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintLeft_toRightOf="@id/ll_calc_constraint_price_input"
+        app:layout_constraintTop_toBottomOf="@id/tv_calculator_quantity_or_weight_title"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent="0.5">
+
+        <EditText
+            android:id="@+id/et_calculator_lb"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:hint="@string/item_dialog_hint_weight"
+            android:inputType="numberDecimal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_marginRight="4dp"
+            android:color="@color/black"
+            android:text="@string/lb"
+            android:textSize="@dimen/text_size_variable" />
+
+        <EditText
+            android:id="@+id/et_calculator_oz"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/item_dialog_hint_ounces"
+            android:inputType="number" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/oz"
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_variable" />
+
+    </LinearLayout>
+
+    <!-- Views visible when litres selected in from category -->
+    <LinearLayout
+        android:id="@+id/if_from_litres_selected"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintLeft_toRightOf="@id/ll_calc_constraint_price_input"
+        app:layout_constraintTop_toBottomOf="@id/tv_calculator_quantity_or_weight_title"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent="0.5">
+
+        <EditText
+            android:id="@+id/et_calculator_litres"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/item_dialog_hint_weight"
+            android:inputType="numberDecimal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/litres"
+            android:textColor="@color/black"
+            android:textSize="@dimen/text_size_variable" />
+
+    </LinearLayout>
+    <!-- End of selectable views -->
+
+    <TextView
+        android:id="@+id/tv_calc_constraint_result_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="18dp"
+        android:text="@string/calculator_result_title"
+        android:textColor="@color/somewhat_transparent_black"
+        android:textSize="@dimen/text_size_label"
+        app:layout_constraintTop_toBottomOf="@id/ll_calc_constraint_price_input" />
+
+    <TextView
+        android:id="@+id/tv_calculator_result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="4dp"
+        android:text="@string/calculator_result_placeholder"
+        android:textColor="@color/black"
+        android:textSize="@dimen/text_size_variable"
+        app:layout_constraintTop_toBottomOf="@id/tv_calc_constraint_result_title" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv_saved_calculations"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="18dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_calculator_result">
+
+    </android.support.v7.widget.RecyclerView>
+
+</android.support.constraint.ConstraintLayout>

@@ -21,7 +21,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- TODO: Add a calculator and make it always shown -->
+    <item
+        android:id="@+id/option_calculator"
+        android:icon="@drawable/ic_calculator_white"
+        android:title="@string/main_menu_option_calculator"
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/option_delete_all"

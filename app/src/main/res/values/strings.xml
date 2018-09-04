@@ -23,6 +23,7 @@
     <string name="title_activity_rearrange_items">Rearrange Mode</string>
 
     <string name="edit_text_hint_placeholder">Replace this with your own hint…</string>
+    <string name="generic_error">An error occurred.</string>
 
     <!-- Values for main activity -->
     <string name="main_activity_no_items">You have no items in your shopping list.
@@ -39,6 +40,7 @@
     <string name="main_activity_placeholder_footer_total_no_budget">$%.2f</string>
 
     <!-- Values for main menu -->
+    <string name="main_menu_option_calculator">Calculator</string>
     <string name="main_menu_option_delete_all">Delete all items</string>
     <string name="main_menu_option_rearrange_items">Rearrange items</string>
     <string name="main_menu_option_settings">Settings</string>
@@ -230,4 +232,36 @@
     <string name="rearrange_confirm_dialog_body">Is this the order you want?</string>
     <string name="rearrange_confirm_dialog_positive">Yes, save</string>
     <string name="rearrange_confirm_dialog_negative">No, cancel</string>
+    <string name="title_activity_calculator">Calculator</string>
+
+    <!-- Values for calculator -->
+    <string name="calculator_from_title">From</string>
+    <string name="calculator_to_title">To</string>
+    <string name="calculator_option_units">Units</string>
+    <string name="calculator_option_kg">Kg</string>
+    <string name="calculator_option_lb">Lb</string>
+    <string name="calculator_option_litres">Litres</string>
+    <string name="calculator_for">for</string>
+    <string name="calculator_label_units">units</string>
+    <string name="calculator_price_title">Total price given</string>
+    <string name="calculator_quantity_title">Quantity</string>
+    <string name="calculator_weight_title">Weight</string>
+    <string name="litres">L</string>
+    <string name="calculator_result_title">Result</string>
+    <string name="calculator_result_placeholder">Please enter a calculation</string>
+    <string name="calculator_result_to_units_format">$%.2f per unit</string>
+    <string name="calculator_result_to_kg_format">$%.2f per kg</string>
+    <string name="calculator_result_to_lb_format">$%.2f per lb</string>
+    <string name="calculator_result_to_litres_format">$%.2f per L</string>
+    <string name="saved_calculation_decimal_format_weight">#.###</string>
+    <string name="saved_calculation_to_units">$%.2f for %d units = $%.2f per unit</string>
+    <string name="saved_calculation_to_kg">$%.2f for %s = $%.2f per kg</string>
+    <string name="saved_calculation_to_lb">$%.2f for %s = $%.2f per lb</string>
+    <string name="saved_calculation_to_litres">$%.2f for %s = $%.2f per L</string>
+    <string name="empty_price_calculation_error">Please input a price.</string>
+    <string name="empty_weight_calculation_error">Please input a weight.</string>
+    <string name="empty_litres_calculation_error">Please input a quantity.</string>
+    <string name="zero_quantity_calculation_error">Please increase the quantity so it is not zero.</string>
+    <string name="calculator_menu_option_clear_saved">Clear saved calculations</string>
+    <string name="calculator_saved_calculation_clear">Clear saved calculation</string>
 </resources>

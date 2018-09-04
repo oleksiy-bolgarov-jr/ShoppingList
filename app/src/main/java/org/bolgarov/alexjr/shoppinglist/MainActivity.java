@@ -99,10 +99,8 @@ public class MainActivity
     /*
      * TODO: Next steps:
      * Add a "delete multiple" option
-     * Add a calculator to conveniently calculate price per kg given price per lb or vice versa, or price per weight/unit given total price and weight/unit
      * Add promotions (e.g. 3 for $6.00, etc.)
      * Add categories
-     * OPTIONAL: Use CardViews as list items
      */
 
     @Override
@@ -159,6 +157,10 @@ public class MainActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.option_calculator:
+                Intent startCalculatorActivity = new Intent(this, CalculatorActivity.class);
+                startActivity(startCalculatorActivity);
+                return true;
             case R.id.option_delete_all:
                 DialogFragment dialog = new DeleteAllItemsDialogFragment();
                 dialog.show(getSupportFragmentManager(), "DeleteAllItemsDialogFragment");

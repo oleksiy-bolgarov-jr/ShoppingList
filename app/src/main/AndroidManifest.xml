@@ -66,6 +66,15 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="org.bolgarov.alexjr.shoppinglist.MainActivity" />
         </activity>
+        <activity
+            android:name=".CalculatorActivity"
+            android:label="@string/title_activity_calculator"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.bolgarov.alexjr.shoppinglist.MainActivity" />
+        </activity>
     </application>
 
 </manifest>
