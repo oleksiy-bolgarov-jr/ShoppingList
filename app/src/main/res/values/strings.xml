@@ -66,6 +66,8 @@
 
     <!-- Values for add item dialog -->
     <string name="add_new_item_dialog_title">Add new item to shopping list</string>
+    <string name="add_new_item_dialog_single_item">Single item</string>
+    <string name="add_new_item_dialog_extended_item">Extended item</string>
     <string name="add_new_item_dialog_add_item_hint">Item name</string>
     <string name="add_new_item_dialog_save_prompt">Save this item to the autocomplete dictionary
     </string>

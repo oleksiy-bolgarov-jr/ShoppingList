@@ -25,7 +25,14 @@ import android.arch.persistence.room.RoomDatabase;
 import android.arch.persistence.room.TypeConverters;
 import android.content.Context;
 
-@Database(entities = {ShoppingListItem.class, AutocompleteEntry.class}, version = 1)
+@Database(
+        entities = {
+                SingleShoppingListItem.class,
+                ExtendedShoppingListItem.class,
+                AutocompleteEntry.class
+        },
+        version = 1
+)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     private static final String DATABASE_NAME = "shopping_list_database";
@@ -40,7 +47,9 @@ public abstract class AppDatabase extends RoomDatabase {
         return instance;
     }
 
-    public abstract ShoppingListItemDao shoppingListItemDao();
+    public abstract SingleShoppingListItemDao singleShoppingListItemDao();
+
+    public abstract ExtendedShoppingListItemDao extendedShoppingListItemDao();
 
     public abstract AutocompleteEntryDao autocompleteEntryDao();
 }

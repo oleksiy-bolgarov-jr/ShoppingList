@@ -363,8 +363,6 @@
         android:layout_marginBottom="8dp"
         android:layout_marginTop="18dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_calculator_result">
-
-    </android.support.v7.widget.RecyclerView>
+        app:layout_constraintTop_toBottomOf="@id/tv_calculator_result" />
 
 </android.support.constraint.ConstraintLayout>

@@ -39,12 +39,16 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.RadioButton;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
 import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntry;
 import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntryDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.R;
 
 import java.lang.ref.WeakReference;
@@ -55,6 +59,8 @@ public class AddItemDialogFragment extends DialogFragment {
     private static final String TAG = AddItemDialogFragment.class.getSimpleName();
 
     private AddItemDialogListener mListener;
+
+    private RadioButton mExtendedItemRadioButton;
 
     private Button mPositiveButton, mNeutralButton;
 
@@ -87,6 +93,8 @@ public class AddItemDialogFragment extends DialogFragment {
         CheckBox saveItemCheckBox = view.findViewById(R.id.save_item_check_box);
         CheckBox optionalCheckBox = view.findViewById(R.id.make_item_optional_check_box);
         EditText conditionEditText = view.findViewById(R.id.condition_edit_text);
+
+        mExtendedItemRadioButton = view.findViewById(R.id.rb_extended_item);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 Objects.requireNonNull(getContext()),
@@ -197,15 +205,28 @@ public class AddItemDialogFragment extends DialogFragment {
      */
     private void addItem(String itemName, boolean optional, @Nullable String condition,
                          boolean saveToAutocomplete, boolean neutral) {
-        ShoppingListItem item = new ShoppingListItem(
-                itemName,
-                optional,
-                // Empty condition is to be treated as null
-                TextUtils.isEmpty(condition) ? null : condition,
-                // To make the order the last number, we simply get the number of already existing
-                // items, since the last item will have order n-1, where n is the number of items
-                mListener.getAdapter().getItemCount()
-        );
+        ShoppingListItem item;
+        if (mExtendedItemRadioButton.isChecked()) {
+            item = new ExtendedShoppingListItem(
+                    itemName,
+                    optional,
+                    // Empty condition is to be treated as null
+                    TextUtils.isEmpty(condition) ? null : condition,
+                    // To make the order the last number, we simply get the number of already existing
+                    // items, since the last item will have order n-1, where n is the number of items
+                    mListener.getAdapter().getItemCount()
+            );
+        } else {
+            item = new SingleShoppingListItem(
+                    itemName,
+                    optional,
+                    // Empty condition is to be treated as null
+                    TextUtils.isEmpty(condition) ? null : condition,
+                    // To make the order the last number, we simply get the number of already existing
+                    // items, since the last item will have order n-1, where n is the number of items
+                    mListener.getAdapter().getItemCount()
+            );
+        }
         new AddItemTask(getContext(), mListener, saveToAutocomplete, neutral).execute(item);
     }
 
@@ -237,16 +258,24 @@ public class AddItemDialogFragment extends DialogFragment {
 
         @Override
         protected ShoppingListItem doInBackground(ShoppingListItem... items) {
-            ShoppingListItemDao shoppingListItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).shoppingListItemDao();
+            SingleShoppingListItemDao singleItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
+            ExtendedShoppingListItemDao extendedItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
             AutocompleteEntryDao autocompleteEntryDao =
                     AppDatabase.getDatabaseInstance(ref.get()).autocompleteEntryDao();
 
             ShoppingListItem item = items[0];
-            shoppingListItemDao.insertAll(item);
+
+            if (item instanceof SingleShoppingListItem) {
+                singleItemDao.insertAll((SingleShoppingListItem) item);
+            } else {
+                extendedItemDao.insertAll((ExtendedShoppingListItem) item);
+            }
+
             if (addToAutocomplete) {
-                AutocompleteEntry autocompleteEntry = new AutocompleteEntry(item.getName());
-                autocompleteEntryDao.insertAll(autocompleteEntry);
+                AutocompleteEntry entry = new AutocompleteEntry(item.getName());
+                autocompleteEntryDao.insertAll(entry);
             }
 
             return item;

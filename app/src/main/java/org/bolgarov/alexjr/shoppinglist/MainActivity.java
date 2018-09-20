@@ -38,17 +38,22 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.dialogs.AddItemDialogFragment;
 import org.bolgarov.alexjr.shoppinglist.dialogs.DeleteAllItemsDialogFragment;
 import org.bolgarov.alexjr.shoppinglist.dialogs.ItemClickDialogListener;
-import org.bolgarov.alexjr.shoppinglist.dialogs.OnCheckedItemClickDialogFragment;
+import org.bolgarov.alexjr.shoppinglist.dialogs.OnCheckedSingleItemClickDialogFragment;
 import org.bolgarov.alexjr.shoppinglist.dialogs.OnConditionedItemClickDialogFragment;
 import org.bolgarov.alexjr.shoppinglist.dialogs.OnNotBuyingItemClickDialogFragment;
-import org.bolgarov.alexjr.shoppinglist.dialogs.OnUncheckedItemClickDialogFragment;
+import org.bolgarov.alexjr.shoppinglist.dialogs.OnUncheckedSingleItemClickDialogFragment;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity
@@ -98,6 +103,7 @@ public class MainActivity
 
     /*
      * TODO: Next steps:
+     * Fix the layout for items with long names
      * Add a "delete multiple" option
      * Add promotions (e.g. 3 for $6.00, etc.)
      * Add categories
@@ -385,15 +391,31 @@ public class MainActivity
     }
 
     public void onUncheckedItemClick(ShoppingListItem item) {
-        OnUncheckedItemClickDialogFragment dialog = new OnUncheckedItemClickDialogFragment();
+        if (item instanceof SingleShoppingListItem) {
+            onUncheckedSingleItemClick((SingleShoppingListItem) item);
+        } else {
+            showToastMessage("This operation is not supported yet.");
+        }
+    }
+
+    private void onUncheckedSingleItemClick(SingleShoppingListItem item) {
+        OnUncheckedSingleItemClickDialogFragment dialog =
+                new OnUncheckedSingleItemClickDialogFragment();
         dialog.setItem(item);
-        dialog.show(getSupportFragmentManager(), "OnUncheckedItemClickDialogFragment");
+        dialog.show(getSupportFragmentManager(), "OnUncheckedSingleItemClickDialogFragment");
     }
 
     private void onCheckedItemClick(ShoppingListItem item) {
-        OnCheckedItemClickDialogFragment dialog = new OnCheckedItemClickDialogFragment();
+        if (item instanceof SingleShoppingListItem) {
+            onCheckedSingleItemClick((SingleShoppingListItem) item);
+        }
+    }
+
+    private void onCheckedSingleItemClick(SingleShoppingListItem item) {
+        OnCheckedSingleItemClickDialogFragment dialog =
+                new OnCheckedSingleItemClickDialogFragment();
         dialog.setItem(item);
-        dialog.show(getSupportFragmentManager(), "OnCheckedItemClickDialogFragment");
+        dialog.show(getSupportFragmentManager(), "OnCheckedSingleItemClickDialogFragment");
     }
 
     private void onNotBuyingItemClick(ShoppingListItem item) {
@@ -459,22 +481,31 @@ public class MainActivity
 
         @Override
         protected List<ShoppingListItem> doInBackground(Void... nothing) {
-            return AppDatabase.getDatabaseInstance(ref.get())
-                    .shoppingListItemDao()
-                    .getAllItems();
+            SingleShoppingListItemDao singleItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
+            ExtendedShoppingListItemDao extendedItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
+
+            List<SingleShoppingListItem> singleItems = singleItemDao.getAllItems();
+            List<ExtendedShoppingListItem> extendedItems = extendedItemDao.getAllItems();
+
+            List<ShoppingListItem> allItems = new ArrayList<>();
+            allItems.addAll(singleItems);
+            allItems.addAll(extendedItems);
+            return allItems;
         }
 
         @Override
-        protected void onPostExecute(List<ShoppingListItem> shoppingListItems) {
-            super.onPostExecute(shoppingListItems);
+        protected void onPostExecute(List<ShoppingListItem> items) {
+            super.onPostExecute(items);
 
             MainActivity mainActivity = ref.get();
-            mainActivity.mShoppingListAdapter.setItemList(shoppingListItems);
+            mainActivity.mShoppingListAdapter.setItemList(items);
 
             // Hide the loading indicator and show the list of items or a message saying there are
             // no items
             mainActivity.mLoadingIndicatorConstraintLayout.setVisibility(View.GONE);
-            mainActivity.switchViews(shoppingListItems.isEmpty());
+            mainActivity.switchViews(items.isEmpty());
         }
     }
 

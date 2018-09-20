@@ -32,6 +32,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.dialogs.DeleteItemDialogFragment;
 
 import java.math.BigDecimal;
@@ -122,7 +123,7 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
                 holder.mPriceCalculationTextView.setText("");
                 holder.mPriceTextView.setText("");
                 break;
-            default:    // ShoppingListItem.UNCHECKED
+            default:    // SingleShoppingListItem.UNCHECKED
                 holder.mContainingLinearLayout.setBackground(holder.DEFAULT_BACKGROUND);
                 holder.mItemNameTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
                 holder.mPriceTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
@@ -141,48 +142,51 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
      * CHECKED.
      *
      * @param holder The SLAViewHolder passed to onBindViewHolder
-     * @param item   The ShoppingListItem that was selected in onBindViewHolder
+     * @param item   The item that was selected in onBindViewHolder
      */
     private void setCalculationView(SLAViewHolder holder, ShoppingListItem item) {
         if (item.getStatus() != ShoppingListItem.CHECKED) {
             throw new IllegalArgumentException("The item must be CHECKED.");
         }
 
-        String calculation;
-        if (item.isPerUnitOrPerWeight() == ShoppingListItem.PER_UNIT) {
-            if (mClickHandler.isTaxIncluded()) {
-                calculation = mContext.getString(
-                        R.string.item_placeholder_calc_per_unit,
-                        item.getBasePrice(),
-                        item.getQuantity(),
-                        item.getTax()
-                );
-            } else {
-                calculation = mContext.getString(
-                        R.string.item_placeholder_calc_per_unit_no_tax,
-                        item.getBasePrice(),
-                        item.getQuantity()
-                );
+        if (item instanceof SingleShoppingListItem) {
+            SingleShoppingListItem singleItem = (SingleShoppingListItem) item;
+            String calculation;
+            if (singleItem.isPerUnitOrPerWeight() == SingleShoppingListItem.PER_UNIT) {
+                if (mClickHandler.isTaxIncluded()) {
+                    calculation = mContext.getString(
+                            R.string.item_placeholder_calc_per_unit,
+                            singleItem.getBasePrice(),
+                            singleItem.getQuantity(),
+                            singleItem.getTax()
+                    );
+                } else {
+                    calculation = mContext.getString(
+                            R.string.item_placeholder_calc_per_unit_no_tax,
+                            singleItem.getBasePrice(),
+                            singleItem.getQuantity()
+                    );
+                }
+            } else {    // item.isPerUnitOrPerWeight() == SingleShoppingListItem.PER_WEIGHT
+                String format = mContext.getString(R.string.item_decimal_format_weight);
+                DecimalFormat df = new DecimalFormat(format);
+                if (mClickHandler.isTaxIncluded()) {
+                    calculation = mContext.getString(
+                            R.string.item_placeholder_calc_per_weight,
+                            singleItem.getBasePrice(),
+                            df.format(singleItem.getWeightInKilograms()),
+                            singleItem.getTax()
+                    );
+                } else {
+                    calculation = mContext.getString(
+                            R.string.item_placeholder_calc_per_weight_no_tax,
+                            singleItem.getBasePrice(),
+                            df.format(singleItem.getWeightInKilograms())
+                    );
+                }
             }
-        } else {    // item.isPerUnitOrPerWeight() == ShoppingListItem.PER_WEIGHT
-            String format = mContext.getString(R.string.item_decimal_format_weight);
-            DecimalFormat df = new DecimalFormat(format);
-            if (mClickHandler.isTaxIncluded()) {
-                calculation = mContext.getString(
-                        R.string.item_placeholder_calc_per_weight,
-                        item.getBasePrice(),
-                        df.format(item.getWeightInKilograms()),
-                        item.getTax()
-                );
-            } else {
-                calculation = mContext.getString(
-                        R.string.item_placeholder_calc_per_weight_no_tax,
-                        item.getBasePrice(),
-                        df.format(item.getWeightInKilograms())
-                );
-            }
+            holder.mPriceCalculationTextView.setText(calculation);
         }
-        holder.mPriceCalculationTextView.setText(calculation);
     }
 
     @Override
@@ -225,7 +229,7 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
                 case ShoppingListItem.CHECKED:
                     mCheckedItems.add(item);
                     break;
-                default:    // ShoppingListItem.NOT_BUYING
+                default:    // SingleShoppingListItem.NOT_BUYING
                     mNotBuyingItems.add(item);
                     break;
             }

@@ -28,7 +28,6 @@ import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
-import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.R;
 import org.bolgarov.alexjr.shoppinglist.ShoppingListAdapter;
 
@@ -82,11 +81,9 @@ public class DeleteAllItemsDialogFragment extends DialogFragment {
 
         @Override
         protected Void doInBackground(Void... nothing) {
-            Context context = ref.get();
-
-            ShoppingListItemDao dao = AppDatabase.getDatabaseInstance(context)
-                    .shoppingListItemDao();
-            dao.deleteAllItems();
+            AppDatabase db = AppDatabase.getDatabaseInstance(ref.get());
+            db.singleShoppingListItemDao().deleteAllItems();
+            db.extendedShoppingListItemDao().deleteAllItems();
             return null;
         }
 

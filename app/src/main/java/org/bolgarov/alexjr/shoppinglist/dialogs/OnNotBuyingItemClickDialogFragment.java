@@ -28,8 +28,11 @@ import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.R;
 import org.bolgarov.alexjr.shoppinglist.ShoppingListAdapter;
 
@@ -91,12 +94,19 @@ public class OnNotBuyingItemClickDialogFragment extends DialogFragment {
 
         @Override
         protected ShoppingListItem doInBackground(ShoppingListItem... items) {
-            Context context = ref.get();
+            SingleShoppingListItemDao singleItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
+            ExtendedShoppingListItemDao extendedItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
+            ShoppingListItem item = items[0];
 
-            ShoppingListItemDao dao = AppDatabase.getDatabaseInstance(context)
-                    .shoppingListItemDao();
-            dao.update(items[0]);
-            return items[0];
+            if (item instanceof SingleShoppingListItem) {
+                singleItemDao.update((SingleShoppingListItem) item);
+            } else {
+                extendedItemDao.update((ExtendedShoppingListItem) item);
+            }
+
+            return item;
         }
 
         @Override

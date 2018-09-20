@@ -44,31 +44,34 @@ import android.widget.TextView;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.R;
 import org.bolgarov.alexjr.shoppinglist.ShoppingListAdapter;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.Objects;
 
-public class OnUncheckedItemClickDialogFragment extends DialogFragment {
+public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
 
-    private static final String TAG = OnUncheckedItemClickDialogFragment.class.getSimpleName();
+    private static final String TAG = OnCheckedSingleItemClickDialogFragment.class.getSimpleName();
 
     private static final BigDecimal OUNCES_PER_POUND = new BigDecimal(16);
+    private static final BigDecimal POUNDS_PER_KILOGRAM = new BigDecimal("2.20462262185");
+    private static final BigDecimal KILOGRAMS_PER_POUND = new BigDecimal("0.45359237");
 
     private static WeakReference<FragmentActivity> activityRef;
 
-    private ShoppingListItem mItem;
-    private int mCurrentQuantity;
-
+    private SingleShoppingListItem mItem;
     private ShoppingListAdapter mAdapter;
     private boolean mBudgetIsSet;
     private BigDecimal mBudget;
 
-    private RadioGroup mPricingRadioGroup;
-    private RadioButton mPerUnitRadioButton, mPerKgRadioButton, mPerLbRadioButton;
+    private int mCurrentQuantity;
+    private boolean mWeightWasChanged;
+
     private int mWhichRadioButtonChecked;
     private TextView mPriceTitleTextView;
     private LinearLayout mIfPerUnitSelectedLayout, mIfPerKgSelectedLayout, mIfPerLbSelectedLayout;
@@ -80,7 +83,6 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
     private TextView mPriceNoTaxTextView;
     private TextView mTaxTextView;
     private TextView mTotalPriceTextView;
-    private LinearLayout mPriceWithoutTaxLayout, mTaxLayout;
 
     private Button mPositiveButton;
 
@@ -104,7 +106,6 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
         AlertDialog d = (AlertDialog) getDialog();
         if (d != null) {
             mPositiveButton = d.getButton(DialogInterface.BUTTON_POSITIVE);
-            mPositiveButton.setEnabled(false);
         }
         activityRef = new WeakReference<>(getActivity());
         updateDialog();
@@ -113,7 +114,8 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        mCurrentQuantity = 0;
+        mCurrentQuantity = mItem.getQuantity();
+        mWeightWasChanged = false;
 
         AlertDialog.Builder builder =
                 new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
@@ -122,10 +124,10 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
         @SuppressLint("InflateParams")
         View view = inflater.inflate(R.layout.dialog_buying_item, null);
 
-        mPricingRadioGroup = view.findViewById(R.id.radio_group_pricing);
-        mPerUnitRadioButton = view.findViewById(R.id.rb_per_unit);
-        mPerKgRadioButton = view.findViewById(R.id.rb_per_kg);
-        mPerLbRadioButton = view.findViewById(R.id.rb_per_pound);
+        RadioGroup pricingRadioGroup = view.findViewById(R.id.radio_group_pricing);
+        RadioButton perUnitRadioButton = view.findViewById(R.id.rb_per_unit);
+        RadioButton perKgRadioButton = view.findViewById(R.id.rb_per_kg);
+        RadioButton perLbRadioButton = view.findViewById(R.id.rb_per_pound);
         mPriceTitleTextView = view.findViewById(R.id.tv_price_title);
         mIfPerUnitSelectedLayout = view.findViewById(R.id.ll_if_per_unit_selected);
         mIfPerKgSelectedLayout = view.findViewById(R.id.ll_if_per_kg_selected);
@@ -140,28 +142,41 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
         mPriceNoTaxTextView = view.findViewById(R.id.tv_total_item_price_no_tax);
         mTaxTextView = view.findViewById(R.id.tv_tax);
         mTotalPriceTextView = view.findViewById(R.id.tv_total_item_price);
-        mPriceWithoutTaxLayout = view.findViewById(R.id.ll_total_price_no_tax);
-        mTaxLayout = view.findViewById(R.id.ll_tax);
 
         builder.setTitle(mItem.getName())
                 .setView(view)
                 .setPositiveButton(
-                        R.string.item_dialog_unchecked_positive,
+                        R.string.item_dialog_checked_positive,
                         (dialog, which) -> onPositive()
                 )
                 .setNegativeButton(
-                        R.string.item_dialog_unchecked_negative,
+                        R.string.item_dialog_checked_negative,
                         (dialog, which) -> dialog.dismiss()
                 )
                 .setNeutralButton(
-                        R.string.item_dialog_unchecked_neutral,
+                        R.string.item_dialog_checked_neutral,
                         (dialog, which) -> onNeutral()
                 );
         Dialog dialog = builder.create();
 
-        mWhichRadioButtonChecked = R.id.rb_per_unit;    // This is the default one
+        if (mItem.isPerUnitOrPerWeight() == SingleShoppingListItem.PER_UNIT) {
+            mWhichRadioButtonChecked = R.id.rb_per_unit;
+            perKgRadioButton.setEnabled(false);
+            perLbRadioButton.setEnabled(false);
+            perUnitSetup();
+        } else {
+            mIfPerUnitSelectedLayout.setVisibility(View.GONE);
+            mIfPerKgSelectedLayout.setVisibility(View.VISIBLE);
 
-        mPricingRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            perUnitRadioButton.setEnabled(false);
+            perUnitRadioButton.setChecked(false);
+            perKgRadioButton.setChecked(true);
+            mWhichRadioButtonChecked = R.id.rb_per_kg;
+            perKgSetup();
+            perLbSetup();
+        }
+
+        pricingRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
             mWhichRadioButtonChecked = checkedId;
             switch (checkedId) {
                 case R.id.rb_per_unit:
@@ -175,12 +190,53 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
                     mIfPerKgSelectedLayout.setVisibility(View.VISIBLE);
                     mIfPerLbSelectedLayout.setVisibility(View.GONE);
                     mPriceTitleTextView.setText(R.string.price_per_kg);
+                    if (!TextUtils.isEmpty(mPriceEditText.getText())) {
+                        BigDecimal pricePerPound =
+                                new BigDecimal(mPriceEditText.getText().toString());
+                        String prefill = getString(R.string.item_dialog_placeholder_price_edit_text,
+                                pricePerPound.multiply(POUNDS_PER_KILOGRAM));
+                        mPriceEditText.setText(prefill);
+                    }
+                    if (!TextUtils.isEmpty(mPoundsEditText.getText()) && mWeightWasChanged) {
+                        BigDecimal pounds = new BigDecimal(mPoundsEditText.getText().toString());
+                        BigDecimal kilograms = TextUtils.isEmpty(mOuncesEditText.getText()) ?
+                                poundsToKilograms(pounds) :
+                                poundsToKilograms(pounds,
+                                        new BigDecimal(mOuncesEditText.getText().toString()));
+
+                        // Strip trailing zeros from kilograms
+                        String format =
+                                getString(R.string.item_dialog_decimal_format_weight_edit_text);
+                        DecimalFormat df = new DecimalFormat(format);
+                        mKilogramsEditText.setText(df.format(kilograms));
+                        mWeightWasChanged = false;
+                    }
                     break;
                 case R.id.rb_per_pound:
                     mIfPerUnitSelectedLayout.setVisibility(View.GONE);
                     mIfPerKgSelectedLayout.setVisibility(View.GONE);
                     mIfPerLbSelectedLayout.setVisibility(View.VISIBLE);
                     mPriceTitleTextView.setText(R.string.price_per_lb);
+                    if (!TextUtils.isEmpty(mPriceEditText.getText())) {
+                        BigDecimal pricePerKilogram =
+                                new BigDecimal(mPriceEditText.getText().toString());
+                        String prefill = getString(R.string.item_dialog_placeholder_price_edit_text,
+                                pricePerKilogram.multiply(KILOGRAMS_PER_POUND));
+                        mPriceEditText.setText(prefill);
+                    }
+                    if (!TextUtils.isEmpty(mKilogramsEditText.getText()) && mWeightWasChanged) {
+                        BigDecimal kilograms =
+                                new BigDecimal(mKilogramsEditText.getText().toString());
+                        BigDecimal pounds = kilograms.multiply(POUNDS_PER_KILOGRAM);
+
+                        // Strip trailing zeros from pounds
+                        String format =
+                                getString(R.string.item_dialog_decimal_format_weight_edit_text);
+                        DecimalFormat df = new DecimalFormat(format);
+                        mPoundsEditText.setText(df.format(pounds));
+                        mOuncesEditText.setText("");
+                        mWeightWasChanged = false;
+                    }
                     break;
             }
             updateDialog();
@@ -201,10 +257,6 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
             }
         });
 
-        perUnitSetup();
-        perKgSetup();
-        perLbSetup();
-
         return dialog;
     }
 
@@ -223,7 +275,7 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
         }
     }
 
-    public void setItem(ShoppingListItem item) {
+    public void setItem(SingleShoppingListItem item) {
         mItem = item;
     }
 
@@ -264,7 +316,7 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
                         BigDecimal ounces = TextUtils.isEmpty(mOuncesEditText.getText()) ?
                                 BigDecimal.ZERO :
                                 new BigDecimal(mOuncesEditText.getText().toString());
-                        // Suppressed because this should never produce a non-terminating expansion.
+                        // Dividing an integer by 16 will never cause non-terminating expansion
                         @SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
                         BigDecimal totalPounds = pounds.add(ounces.divide(OUNCES_PER_POUND));
                         priceWithoutTax = basePrice.multiply(totalPounds);
@@ -292,6 +344,10 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
     }
 
     private void perUnitSetup() {
+        String prefill =
+                getString(R.string.item_dialog_placeholder_price_edit_text, mItem.getBasePrice());
+        mPriceEditText.setText(prefill);
+
         mDecreaseQuantityButton.setOnClickListener(v -> {
             mCurrentQuantity--;
             mDecreaseQuantityButton.setEnabled(mCurrentQuantity > 0);
@@ -305,6 +361,14 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
     }
 
     private void perKgSetup() {
+        String prefill =
+                getString(R.string.item_dialog_placeholder_price_edit_text, mItem.getBasePrice());
+        mPriceEditText.setText(prefill);
+
+        // Need to use DecimalFormat to strip trailing zeros from kilograms
+        String format = getString(R.string.item_dialog_decimal_format_weight_edit_text);
+        DecimalFormat df = new DecimalFormat(format);
+        mKilogramsEditText.setText(df.format(mItem.getWeightInKilograms()));
         mKilogramsEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -312,6 +376,7 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                mWeightWasChanged = true;
                 updateDialog();
             }
 
@@ -322,6 +387,11 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
     }
 
     private void perLbSetup() {
+        // Need to use DecimalFormat to strip trailing zeros from pounds
+        String format = getString(R.string.item_dialog_decimal_format_weight_edit_text);
+        DecimalFormat df = new DecimalFormat(format);
+        mPoundsEditText.setText(df.format(mItem.getWeightInPounds()));
+
         mPoundsEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -329,6 +399,7 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                mWeightWasChanged = true;
                 updateDialog();
             }
 
@@ -336,6 +407,7 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
             public void afterTextChanged(Editable s) {
             }
         });
+
         mOuncesEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -343,6 +415,7 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                mWeightWasChanged = true;
                 updateDialog();
             }
 
@@ -352,28 +425,34 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
         });
     }
 
+    private BigDecimal poundsToKilograms(BigDecimal pounds, BigDecimal ounces) {
+        // Dividing an integer by 16 will never cause non-terminating expansion
+        @SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
+        BigDecimal fractionalPart = ounces.divide(OUNCES_PER_POUND);
+        BigDecimal totalPounds = pounds.add(fractionalPart);
+        return totalPounds.multiply(KILOGRAMS_PER_POUND);
+    }
+
+    private BigDecimal poundsToKilograms(BigDecimal pounds) {
+        return poundsToKilograms(pounds, BigDecimal.ZERO);
+    }
+
     /**
-     * The positive button updates the item to have the values specified by the user, moves the
-     * item to the checked position, and warns the user if the item caused the total price to go
-     * over budget.
+     * The positive button updates the item to have the values specified by the user, and warns the
+     * user if this made the total price go over budget.
      */
     private void onPositive() {
-        mItem.setStatus(ShoppingListItem.CHECKED);
-
         switch (mWhichRadioButtonChecked) {
             case R.id.rb_per_unit:
-                mItem.setPerUnitOrPerWeight(ShoppingListItem.PER_UNIT);
                 mItem.setBasePrice(new BigDecimal(mPriceEditText.getText().toString()));
                 mItem.setQuantity(mCurrentQuantity);
                 break;
             case R.id.rb_per_kg:
-                mItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
                 mItem.setBasePrice(new BigDecimal(mPriceEditText.getText().toString()));
                 mItem.setWeightInKilograms(new BigDecimal(mKilogramsEditText.getText().toString()));
                 break;
             case R.id.rb_per_pound:
                 BigDecimal pounds = new BigDecimal(mPoundsEditText.getText().toString());
-                mItem.setPerUnitOrPerWeight(ShoppingListItem.PER_WEIGHT);
                 mItem.setPricePerPound(new BigDecimal(mPriceEditText.getText().toString()));
                 if (!TextUtils.isEmpty(mOuncesEditText.getText())) {
                     int ounces = Integer.parseInt(mOuncesEditText.getText().toString());
@@ -386,29 +465,21 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
     }
 
     /**
-     * The neutral button moves the item to the "not buying" position.
+     * The neutral button moves the item back to the unchecked position.
      */
     private void onNeutral() {
-        mItem.setStatus(ShoppingListItem.NOT_BUYING);
+        mItem.reset();
         new UpdateItemTask(getContext(), mAdapter).execute(mItem);
     }
 
     private static class UpdateItemTask
-            extends AsyncTask<ShoppingListItem, Void, ShoppingListItem> {
+            extends AsyncTask<SingleShoppingListItem, Void, SingleShoppingListItem> {
         private final WeakReference<Context> ref;
         private final ShoppingListAdapter adapter;
         private final boolean positive;
         private final boolean budgetIsSet;
         private final BigDecimal budget;
 
-        /**
-         * This constructor is to be used in the positive button callback.
-         *
-         * @param context     The calling context
-         * @param adapter     The ShoppingListAdapter in this fragment
-         * @param budgetIsSet True iff user specified that the budget is set
-         * @param budget      The budget specified by the user. Irrelevant if budgetIsSet is false.
-         */
         UpdateItemTask(Context context, ShoppingListAdapter adapter, boolean budgetIsSet,
                        BigDecimal budget) {
             ref = new WeakReference<>(context);
@@ -422,7 +493,7 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
          * This constructor is to be used in the neutral button callback.
          *
          * @param context The calling context
-         * @param adapter The ShoppingListAdapter in this fragment
+         * @param adapter The ShoppingListAdapter in ths fragment
          */
         UpdateItemTask(Context context, ShoppingListAdapter adapter) {
             ref = new WeakReference<>(context);
@@ -433,17 +504,17 @@ public class OnUncheckedItemClickDialogFragment extends DialogFragment {
         }
 
         @Override
-        protected ShoppingListItem doInBackground(ShoppingListItem... items) {
+        protected SingleShoppingListItem doInBackground(SingleShoppingListItem... items) {
             Context context = ref.get();
 
-            ShoppingListItemDao dao = AppDatabase.getDatabaseInstance(context)
-                    .shoppingListItemDao();
+            SingleShoppingListItemDao dao = AppDatabase.getDatabaseInstance(context)
+                    .singleShoppingListItemDao();
             dao.update(items[0]);
             return items[0];
         }
 
         @Override
-        protected void onPostExecute(ShoppingListItem item) {
+        protected void onPostExecute(SingleShoppingListItem item) {
             super.onPostExecute(item);
             adapter.onDataChanged();
 

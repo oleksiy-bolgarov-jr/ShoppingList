@@ -16,10 +16,14 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,7 +34,6 @@ public class RearrangeItemsActivity extends AppCompatActivity
 
     private ConstraintLayout mLoadingDisplay;
     private FrameLayout mListContainer;
-    private RecyclerView mRecyclerView;
 
     private RearrangeItemsAdapter mAdapter;
     private ItemTouchHelper mItemTouchHelper;
@@ -44,15 +47,20 @@ public class RearrangeItemsActivity extends AppCompatActivity
 
         mLoadingDisplay = findViewById(R.id.constraint_layout_loading_display_rearrange);
         mListContainer = findViewById(R.id.frame_layout_item_container);
-        mRecyclerView = findViewById(R.id.recycler_view_rearrange);
+        RecyclerView recyclerView = findViewById(R.id.recycler_view_rearrange);
 
         FloatingActionButton confirmButton = findViewById(R.id.fab_confirm);
         confirmButton.setOnClickListener(view -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            //noinspection unchecked
             builder.setTitle(R.string.rearrange_confirm_dialog_title)
                     .setMessage(R.string.rearrange_confirm_dialog_body)
-                    .setPositiveButton(R.string.rearrange_confirm_dialog_positive,
-                            (dialog, id) -> new UpdateOrderTask(this).execute())
+                    .setPositiveButton(
+                            R.string.rearrange_confirm_dialog_positive,
+                            (dialog, id) ->
+                                    new UpdateOrderTask(this)
+                                            .execute(mAdapter.getItemList())
+                    )
                     .setNegativeButton(
                             R.string.rearrange_confirm_dialog_negative,
                             (dialog, id) -> dialog.dismiss())
@@ -62,16 +70,16 @@ public class RearrangeItemsActivity extends AppCompatActivity
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this,
                 LinearLayoutManager.VERTICAL, false);
-        mRecyclerView.setLayoutManager(layoutManager);
-        mRecyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setHasFixedSize(true);
 
         mAdapter = new RearrangeItemsAdapter(this, this);
 
-        mRecyclerView.setAdapter(mAdapter);
+        recyclerView.setAdapter(mAdapter);
 
         ItemTouchHelper.Callback callback = new RearrangeItemsAdapter.DragHelperCallback(mAdapter);
         mItemTouchHelper = new ItemTouchHelper(callback);
-        mItemTouchHelper.attachToRecyclerView(mRecyclerView);
+        mItemTouchHelper.attachToRecyclerView(recyclerView);
 
         new RetrieveItemsTask(this).execute();
     }
@@ -118,24 +126,33 @@ public class RearrangeItemsActivity extends AppCompatActivity
 
         @Override
         protected List<ShoppingListItem> doInBackground(Void... nothing) {
-            return AppDatabase.getDatabaseInstance(ref.get())
-                    .shoppingListItemDao()
-                    .getAllItems();
+            SingleShoppingListItemDao singleItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
+            ExtendedShoppingListItemDao extendedItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
+
+            List<SingleShoppingListItem> singleItems = singleItemDao.getAllItems();
+            List<ExtendedShoppingListItem> extendedItems = extendedItemDao.getAllItems();
+
+            List<ShoppingListItem> allItems = new ArrayList<>();
+            allItems.addAll(singleItems);
+            allItems.addAll(extendedItems);
+            return allItems;
         }
 
         @Override
-        protected void onPostExecute(List<ShoppingListItem> shoppingListItems) {
-            super.onPostExecute(shoppingListItems);
+        protected void onPostExecute(List<ShoppingListItem> items) {
+            super.onPostExecute(items);
             RearrangeItemsActivity activity = ref.get();
 
-            activity.mAdapter.setItemList(shoppingListItems);
+            activity.mAdapter.setItemList(items);
 
             activity.mLoadingDisplay.setVisibility(View.GONE);
             activity.mListContainer.setVisibility(View.VISIBLE);
         }
     }
 
-    private static class UpdateOrderTask extends AsyncTask<Void, Void, Void> {
+    private static class UpdateOrderTask extends AsyncTask<List<ShoppingListItem>, Void, Void> {
         private final WeakReference<RearrangeItemsActivity> ref;
 
         UpdateOrderTask(RearrangeItemsActivity context) {
@@ -150,15 +167,21 @@ public class RearrangeItemsActivity extends AppCompatActivity
             activity.mListContainer.setVisibility(View.GONE);
         }
 
+        @SafeVarargs
         @Override
-        protected Void doInBackground(Void... nothing) {
-            RearrangeItemsActivity activity = ref.get();
-
-            ShoppingListItemDao dao =
-                    AppDatabase.getDatabaseInstance(activity).shoppingListItemDao();
-            ShoppingListItem[] items =
-                    activity.mAdapter.getItemList().toArray(new ShoppingListItem[0]);
-            dao.update(items);
+        protected final Void doInBackground(List<ShoppingListItem>... itemListAndThenGarbage) {
+            SingleShoppingListItemDao singleItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
+            ExtendedShoppingListItemDao extendedItemDao =
+                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
+            List<ShoppingListItem> items = itemListAndThenGarbage[0];
+            for (ShoppingListItem item : items) {
+                if (item instanceof SingleShoppingListItem) {
+                    singleItemDao.update((SingleShoppingListItem) item);
+                } else {
+                    extendedItemDao.update((ExtendedShoppingListItem) item);
+                }
+            }
 
             return null;
         }
