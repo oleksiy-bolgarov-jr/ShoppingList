@@ -46,7 +46,6 @@ public class CalculatorActivity extends AppCompatActivity {
     private EditText mPoundsEditText, mOuncesEditText;
     private EditText mLitresEditText;
     private TextView mResultsTextView;
-    private RecyclerView mSavedCalculationsRecyclerView;
 
     private int mQuantity;
     private BigDecimal mResultPrice;
@@ -80,7 +79,7 @@ public class CalculatorActivity extends AppCompatActivity {
         mOuncesEditText = findViewById(R.id.et_calculator_oz);
         mLitresEditText = findViewById(R.id.et_calculator_litres);
         mResultsTextView = findViewById(R.id.tv_calculator_result);
-        mSavedCalculationsRecyclerView = findViewById(R.id.rv_saved_calculations);
+        RecyclerView savedCalculationsRecyclerView = findViewById(R.id.rv_saved_calculations);
 
         mQuantity = 1;
 
@@ -89,11 +88,11 @@ public class CalculatorActivity extends AppCompatActivity {
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this,
                 LinearLayoutManager.VERTICAL, false);
-        mSavedCalculationsRecyclerView.setLayoutManager(layoutManager);
-        mSavedCalculationsRecyclerView.setHasFixedSize(true);
+        savedCalculationsRecyclerView.setLayoutManager(layoutManager);
+        savedCalculationsRecyclerView.setHasFixedSize(true);
 
         mAdapter = new SavedCalculationAdapter();
-        mSavedCalculationsRecyclerView.setAdapter(mAdapter);
+        savedCalculationsRecyclerView.setAdapter(mAdapter);
 
         FloatingActionButton fab = findViewById(R.id.fab_save_calculation);
         fab.setOnClickListener(view -> {
@@ -229,7 +228,8 @@ public class CalculatorActivity extends AppCompatActivity {
         }
 
         if (!TextUtils.isEmpty(mTotalPriceEditText.getText())) {
-            BigDecimal price = new BigDecimal(mTotalPriceEditText.getText().toString());
+            BigDecimal price =
+                    new BigDecimal(addLeadingZero(mTotalPriceEditText.getText().toString()));
             BigDecimal result = null;
             String resultString;
             switch (mFromWhichRadioButtonChecked) {
@@ -241,7 +241,13 @@ public class CalculatorActivity extends AppCompatActivity {
                 case R.id.rb_from_kg:
                     if (!TextUtils.isEmpty(mKilogramsEditText.getText())) {
                         BigDecimal kilograms =
-                                new BigDecimal(mKilogramsEditText.getText().toString());
+                                new BigDecimal(
+                                        addLeadingZero(mKilogramsEditText.getText().toString()));
+                        if (kilograms.equals(BigDecimal.ZERO)) {
+                            // Prevent division by zero
+                            break;
+                        }
+
                         if (mToWhichRadioButtonChecked == R.id.rb_to_lb) {
                             BigDecimal pounds = kilograms.multiply(POUNDS_PER_KILOGRAM);
                             result = price.divide(pounds, 2, RoundingMode.HALF_UP);
@@ -259,7 +265,14 @@ public class CalculatorActivity extends AppCompatActivity {
                     break;
                 case R.id.rb_from_lb:
                     if (!TextUtils.isEmpty(mPoundsEditText.getText())) {
-                        BigDecimal pounds = new BigDecimal(mPoundsEditText.getText().toString());
+                        BigDecimal pounds =
+                                new BigDecimal(
+                                        addLeadingZero(mPoundsEditText.getText().toString()));
+                        if (pounds.equals(BigDecimal.ZERO)) {
+                            // Prevent division by zero
+                            break;
+                        }
+
                         if (!TextUtils.isEmpty(mOuncesEditText.getText())) {
                             BigDecimal ounces =
                                     new BigDecimal(mOuncesEditText.getText().toString());
@@ -287,7 +300,14 @@ public class CalculatorActivity extends AppCompatActivity {
                     break;
                 case R.id.rb_from_litres:
                     if (!TextUtils.isEmpty(mLitresEditText.getText())) {
-                        BigDecimal litres = new BigDecimal(mLitresEditText.getText().toString());
+                        BigDecimal litres =
+                                new BigDecimal(
+                                        addLeadingZero(mLitresEditText.getText().toString()));
+                        if (litres.equals(BigDecimal.ZERO)) {
+                            // Prevent division by zero
+                            break;
+                        }
+
                         result = price.divide(litres, 2, RoundingMode.HALF_UP);
                         resultString =
                                 getString(R.string.calculator_result_to_litres_format, result);
@@ -350,6 +370,9 @@ public class CalculatorActivity extends AppCompatActivity {
                             "mKilogramsEditText must not be empty when rb_from_kg is selected.");
                 }
                 BigDecimal kilograms = new BigDecimal(mKilogramsEditText.getText().toString());
+                if (kilograms.equals(BigDecimal.ZERO)) {
+                    throw new IllegalStateException("Kilograms must not be zero.");
+                }
                 String kilogramsString = df.format(kilograms) + getString(R.string.kg);
                 if (mToWhichRadioButtonChecked == R.id.rb_to_kg) {
                     result = getString(
@@ -365,6 +388,9 @@ public class CalculatorActivity extends AppCompatActivity {
                             "mPoundsEditText must not be empty when rb_from_lb is selected.");
                 }
                 BigDecimal pounds = new BigDecimal(mPoundsEditText.getText().toString());
+                if (pounds.equals(BigDecimal.ZERO)) {
+                    throw new IllegalStateException("Pounds must not be zero.");
+                }
                 String poundsString = df.format(pounds) + getString(R.string.lb);
                 if (!TextUtils.isEmpty(mOuncesEditText.getText())) {
                     int ounces = Integer.parseInt(mOuncesEditText.getText().toString());
@@ -384,6 +410,9 @@ public class CalculatorActivity extends AppCompatActivity {
                             "mLitresEditText must not be empty when rb_from_litres is selected.");
                 }
                 BigDecimal litres = new BigDecimal(mLitresEditText.getText().toString());
+                if (litres.equals(BigDecimal.ZERO)) {
+                    throw new IllegalStateException("Litres must not be zero.");
+                }
                 String litresString = df.format(litres) + getString(R.string.litres);
                 result = getString(
                         R.string.saved_calculation_to_litres, price, litresString, mResultPrice);
@@ -393,6 +422,14 @@ public class CalculatorActivity extends AppCompatActivity {
                 break;
         }
         return result;
+    }
+
+    /**
+     * Adds a trailing zero to a numeric string if it is needed, that is, if it starts with ".".
+     * @param numericString
+     */
+    private String addLeadingZero(String numericString) {
+        return Character.isDigit(numericString.charAt(0)) ? numericString : "0" + numericString;
     }
 
     private void showToastMessage(String message) {

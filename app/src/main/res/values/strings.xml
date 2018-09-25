@@ -261,8 +261,8 @@
     <string name="saved_calculation_to_lb">$%.2f for %s = $%.2f per lb</string>
     <string name="saved_calculation_to_litres">$%.2f for %s = $%.2f per L</string>
     <string name="empty_price_calculation_error">Please input a price.</string>
-    <string name="empty_weight_calculation_error">Please input a weight.</string>
-    <string name="empty_litres_calculation_error">Please input a quantity.</string>
+    <string name="empty_weight_calculation_error">Please input a nonzero weight.</string>
+    <string name="empty_litres_calculation_error">Please input a nonzero quantity.</string>
     <string name="zero_quantity_calculation_error">Please increase the quantity so it is not zero.</string>
     <string name="calculator_menu_option_clear_saved">Clear saved calculations</string>
     <string name="calculator_saved_calculation_clear">Clear saved calculation</string>

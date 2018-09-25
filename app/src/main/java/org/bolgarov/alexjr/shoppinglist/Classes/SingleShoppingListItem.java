@@ -177,6 +177,19 @@ public class SingleShoppingListItem extends ShoppingListItem {
         this.perUnitOrPerWeight = perUnitOrPerWeight;
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof SingleShoppingListItem)) return false;
+
+        SingleShoppingListItem otherItem = (SingleShoppingListItem) other;
+        return this.getId() == otherItem.getId() &&
+                this.status == otherItem.getStatus() &&
+                this.basePrice.equals(otherItem.getBasePrice()) &&
+                this.quantity == otherItem.getQuantity() &&
+                this.weightInKilograms.equals(otherItem.getWeightInKilograms()) &&
+                this.perUnitOrPerWeight == otherItem.isPerUnitOrPerWeight();
+    }
+
     /**
      * Calculates and returns the total price of this item without tax.
      *

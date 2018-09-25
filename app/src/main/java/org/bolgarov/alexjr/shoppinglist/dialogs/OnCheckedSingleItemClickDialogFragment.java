@@ -192,7 +192,7 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
                     mPriceTitleTextView.setText(R.string.price_per_kg);
                     if (!TextUtils.isEmpty(mPriceEditText.getText())) {
                         BigDecimal pricePerPound =
-                                new BigDecimal(mPriceEditText.getText().toString());
+                                new BigDecimal(addLeadingZero(mPriceEditText.getText().toString()));
                         String prefill = getString(R.string.item_dialog_placeholder_price_edit_text,
                                 pricePerPound.multiply(POUNDS_PER_KILOGRAM));
                         mPriceEditText.setText(prefill);
@@ -201,8 +201,8 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
                         BigDecimal pounds = new BigDecimal(mPoundsEditText.getText().toString());
                         BigDecimal kilograms = TextUtils.isEmpty(mOuncesEditText.getText()) ?
                                 poundsToKilograms(pounds) :
-                                poundsToKilograms(pounds,
-                                        new BigDecimal(mOuncesEditText.getText().toString()));
+                                poundsToKilograms(pounds, new BigDecimal(
+                                        addLeadingZero(mOuncesEditText.getText().toString())));
 
                         // Strip trailing zeros from kilograms
                         String format =
@@ -219,14 +219,14 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
                     mPriceTitleTextView.setText(R.string.price_per_lb);
                     if (!TextUtils.isEmpty(mPriceEditText.getText())) {
                         BigDecimal pricePerKilogram =
-                                new BigDecimal(mPriceEditText.getText().toString());
+                                new BigDecimal(addLeadingZero(mPriceEditText.getText().toString()));
                         String prefill = getString(R.string.item_dialog_placeholder_price_edit_text,
                                 pricePerKilogram.multiply(KILOGRAMS_PER_POUND));
                         mPriceEditText.setText(prefill);
                     }
                     if (!TextUtils.isEmpty(mKilogramsEditText.getText()) && mWeightWasChanged) {
-                        BigDecimal kilograms =
-                                new BigDecimal(mKilogramsEditText.getText().toString());
+                        BigDecimal kilograms = new BigDecimal(
+                                addLeadingZero(mKilogramsEditText.getText().toString()));
                         BigDecimal pounds = kilograms.multiply(POUNDS_PER_KILOGRAM);
 
                         // Strip trailing zeros from pounds
@@ -283,7 +283,8 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
         String quantityString = Integer.toString(mCurrentQuantity);
         mQuantityTextView.setText(quantityString);
         if (!TextUtils.isEmpty(mPriceEditText.getText())) {
-            BigDecimal basePrice = new BigDecimal(mPriceEditText.getText().toString());
+            BigDecimal basePrice = new BigDecimal(
+                    addLeadingZero(mPriceEditText.getText().toString()));
             BigDecimal priceWithoutTax = null, tax = null, totalPrice = null;
             switch (mWhichRadioButtonChecked) {
                 case R.id.rb_per_unit:
@@ -300,8 +301,8 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
                 case R.id.rb_per_kg:
                     if (!TextUtils.isEmpty(mKilogramsEditText.getText())) {
                         mPositiveButton.setEnabled(true);
-                        BigDecimal kilograms =
-                                new BigDecimal(mKilogramsEditText.getText().toString());
+                        BigDecimal kilograms = new BigDecimal(
+                                addLeadingZero(mKilogramsEditText.getText().toString()));
                         priceWithoutTax = basePrice.multiply(kilograms);
                         tax = ShoppingListItem.getTax(priceWithoutTax);
                         totalPrice = priceWithoutTax.add(tax);
@@ -312,7 +313,8 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
                 case R.id.rb_per_pound:
                     if (!TextUtils.isEmpty(mPoundsEditText.getText())) {
                         mPositiveButton.setEnabled(true);
-                        BigDecimal pounds = new BigDecimal(mPoundsEditText.getText().toString());
+                        BigDecimal pounds = new BigDecimal(
+                                addLeadingZero(mPoundsEditText.getText().toString()));
                         BigDecimal ounces = TextUtils.isEmpty(mOuncesEditText.getText()) ?
                                 BigDecimal.ZERO :
                                 new BigDecimal(mOuncesEditText.getText().toString());
@@ -444,16 +446,21 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
     private void onPositive() {
         switch (mWhichRadioButtonChecked) {
             case R.id.rb_per_unit:
-                mItem.setBasePrice(new BigDecimal(mPriceEditText.getText().toString()));
+                mItem.setBasePrice(
+                        new BigDecimal(addLeadingZero(mPriceEditText.getText().toString())));
                 mItem.setQuantity(mCurrentQuantity);
                 break;
             case R.id.rb_per_kg:
-                mItem.setBasePrice(new BigDecimal(mPriceEditText.getText().toString()));
-                mItem.setWeightInKilograms(new BigDecimal(mKilogramsEditText.getText().toString()));
+                mItem.setBasePrice(
+                        new BigDecimal(addLeadingZero(mPriceEditText.getText().toString())));
+                mItem.setWeightInKilograms(
+                        new BigDecimal(addLeadingZero(mKilogramsEditText.getText().toString())));
                 break;
             case R.id.rb_per_pound:
-                BigDecimal pounds = new BigDecimal(mPoundsEditText.getText().toString());
-                mItem.setPricePerPound(new BigDecimal(mPriceEditText.getText().toString()));
+                BigDecimal pounds =
+                        new BigDecimal(addLeadingZero(mPoundsEditText.getText().toString()));
+                mItem.setPricePerPound(
+                        new BigDecimal(addLeadingZero(mPriceEditText.getText().toString())));
                 if (!TextUtils.isEmpty(mOuncesEditText.getText())) {
                     int ounces = Integer.parseInt(mOuncesEditText.getText().toString());
                     mItem.setWeightInPounds(pounds, ounces);
@@ -470,6 +477,14 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
     private void onNeutral() {
         mItem.reset();
         new UpdateItemTask(getContext(), mAdapter).execute(mItem);
+    }
+
+    /**
+     * Adds a trailing zero to a numeric string if it is needed, that is, if it starts with ".".
+     * @param numericString
+     */
+    private String addLeadingZero(String numericString) {
+        return Character.isDigit(numericString.charAt(0)) ? numericString : "0" + numericString;
     }
 
     private static class UpdateItemTask
