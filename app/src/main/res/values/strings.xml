@@ -130,6 +130,8 @@
     <string name="item_dialog_condition_negative">No, cancel</string>
     <string name="item_dialog_description_decrease_quantity">Decrease quantity by 1</string>
     <string name="item_dialog_description_increase_quantity">Increase quantity by 1</string>
+    <string name="item_dialog_error_failed_to_save">Failed to save this item. Please try
+        again.</string>
 
     <!-- Item dialog placeholders -->
     <string name="item_dialog_placeholder_total_price_no_tax">$%.2f</string>

@@ -178,10 +178,10 @@ public class SingleShoppingListItem extends ShoppingListItem {
     }
 
     @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof SingleShoppingListItem)) return false;
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SingleShoppingListItem)) return false;
 
-        SingleShoppingListItem otherItem = (SingleShoppingListItem) other;
+        SingleShoppingListItem otherItem = (SingleShoppingListItem) obj;
         return this.getId() == otherItem.getId() &&
                 this.status == otherItem.getStatus() &&
                 this.basePrice.equals(otherItem.getBasePrice()) &&

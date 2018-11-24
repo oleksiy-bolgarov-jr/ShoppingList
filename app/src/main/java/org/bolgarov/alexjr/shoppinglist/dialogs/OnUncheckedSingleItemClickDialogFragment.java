@@ -32,6 +32,7 @@ import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -40,6 +41,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
@@ -393,11 +395,15 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
     }
 
     /**
-     * Adds a trailing zero to a numeric string if it is needed, that is, if it starts with ".".
-     * @param numericString
+     * Adds a leading zero to a numeric string if it is needed, that is, if it starts with ".".
+     * @param numericString A numeric string with at most one "."
      */
     private String addLeadingZero(String numericString) {
-        return Character.isDigit(numericString.charAt(0)) ? numericString : "0" + numericString;
+        return (Character.isDigit(numericString.charAt(0)) ? numericString : "0") + numericString;
+    }
+
+    private static void showToastMessage(Context context, int messageResId) {
+        Toast.makeText(context, messageResId, Toast.LENGTH_SHORT).show();
     }
 
     private static class UpdateItemTask
@@ -407,6 +413,9 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
         private final boolean positive;
         private final boolean budgetIsSet;
         private final BigDecimal budget;
+
+        private ShoppingListItem itemInDatabase;
+        private boolean doInBackgroundWasExecuted = false;
 
         /**
          * This constructor is to be used in the positive button callback.
@@ -441,17 +450,36 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
 
         @Override
         protected SingleShoppingListItem doInBackground(SingleShoppingListItem... items) {
+            Log.d(TAG, "Calling doInBackground");
+
             Context context = ref.get();
 
             SingleShoppingListItemDao dao = AppDatabase.getDatabaseInstance(context)
                     .singleShoppingListItemDao();
             dao.update(items[0]);
+
+            itemInDatabase = dao.get(items[0].getId());
+            doInBackgroundWasExecuted = true;
             return items[0];
         }
 
         @Override
         protected void onPostExecute(SingleShoppingListItem item) {
+            Log.d(TAG, "Calling onPostExecute");
             super.onPostExecute(item);
+
+            // Check if the item was actually saved, because I have no idea why, but sometimes the
+            // item is not actually updated
+            Context context = ref.get();
+            if (!doInBackgroundWasExecuted) {
+                Toast.makeText(context, "doInBackground was not executed", Toast.LENGTH_SHORT).show();
+            }
+            if (itemInDatabase == null || !itemInDatabase.equals(item)) {
+                item.reset();
+                showToastMessage(context, R.string.item_dialog_error_failed_to_save);
+                return;
+            }
+
             adapter.onDataChanged();
 
             if (positive && budgetIsSet && adapter.getTotalPrice().compareTo(budget) > 0) {

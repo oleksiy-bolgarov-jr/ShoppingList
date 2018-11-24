@@ -32,6 +32,7 @@ import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -240,6 +241,8 @@ public class AddItemDialogFragment extends DialogFragment {
         void onAddItemButtonClick();
 
         void updateAutocompleteDictionary();
+
+        void recreate();
     }
 
     private static class AddItemTask extends AsyncTask<ShoppingListItem, Void, ShoppingListItem> {
@@ -247,6 +250,8 @@ public class AddItemDialogFragment extends DialogFragment {
         private final AddItemDialogListener listener;
         private final boolean addToAutocomplete;
         private final boolean neutral;
+
+        private boolean shouldFinish = true;    // TODO: May not need this
 
         AddItemTask(Context context, AddItemDialogListener listener, boolean addToAutocomplete,
                     boolean neutral) {
@@ -258,6 +263,8 @@ public class AddItemDialogFragment extends DialogFragment {
 
         @Override
         protected ShoppingListItem doInBackground(ShoppingListItem... items) {
+            Log.d(TAG, "Calling doInBackground");
+
             SingleShoppingListItemDao singleItemDao =
                     AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
             ExtendedShoppingListItemDao extendedItemDao =
@@ -283,6 +290,8 @@ public class AddItemDialogFragment extends DialogFragment {
 
         @Override
         protected void onPostExecute(ShoppingListItem item) {
+            Log.d(TAG, "Calling onPostExecute");
+
             super.onPostExecute(item);
             listener.getAdapter().addItem(item);
 
@@ -294,6 +303,9 @@ public class AddItemDialogFragment extends DialogFragment {
                 // If the neutral button is pressed, show the same dialog again, to speed up the
                 // process of adding multiple items
                 listener.onAddItemButtonClick();
+                shouldFinish = false;
+            } else {
+                listener.recreate();    // TODO: This works, but please try to implement a more elegant solution (perhaps you do need shouldFinish after all)
             }
         }
     }
