@@ -26,6 +26,8 @@ import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -39,10 +41,9 @@ import android.widget.Toast;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
 import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItemDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.dialogs.AddItemDialogFragment;
 import org.bolgarov.alexjr.shoppinglist.dialogs.DeleteAllItemsDialogFragment;
 import org.bolgarov.alexjr.shoppinglist.dialogs.ItemClickDialogListener;
@@ -50,10 +51,10 @@ import org.bolgarov.alexjr.shoppinglist.dialogs.OnCheckedSingleItemClickDialogFr
 import org.bolgarov.alexjr.shoppinglist.dialogs.OnConditionedItemClickDialogFragment;
 import org.bolgarov.alexjr.shoppinglist.dialogs.OnNotBuyingItemClickDialogFragment;
 import org.bolgarov.alexjr.shoppinglist.dialogs.OnUncheckedSingleItemClickDialogFragment;
+import org.bolgarov.alexjr.shoppinglist.dialogs.extendedItems.OnExtendedItemClickDialogFragment;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity
@@ -103,10 +104,12 @@ public class MainActivity
 
     /*
      * TODO: Next steps:
-     * Fix the layout for items with long names
-     * Add a "delete multiple" option
      * Add promotions (e.g. 3 for $6.00, etc.)
-     * Add categories
+     *
+     * Small improvements to make:
+     * Add the option to directly edit quantity in addition to the - and + buttons
+     * Add confirmation screen for extended item add and not buying buttons
+     * Get rid of unused values
      */
 
     @Override
@@ -120,8 +123,8 @@ public class MainActivity
                 R.id.constraint_layout_loading_display_main);
 
         mFootnotes = findViewById(R.id.linear_layout_footnotes);
-        mTotalPriceTextView = findViewById(R.id.tv_total_price);
-        mOverBudgetWarningTextView = findViewById(R.id.tv_over_budget_footer);
+        mTotalPriceTextView = findViewById(R.id.tv_this_item_price);
+        mOverBudgetWarningTextView = findViewById(R.id.over_budget_warning);
         mOptionalTextView = findViewById(R.id.tv_optional_footnote);
         mConditionTextView = findViewById(R.id.tv_condition_footnote);
 
@@ -304,7 +307,7 @@ public class MainActivity
         int colorId;
         if (mBudgetIsSet) {
             totalString = getString(
-                    R.string.main_activity_placeholder_footer_total_with_budget,
+                    R.string.footer_total_with_budget,
                     price,
                     mBudget
             );
@@ -321,7 +324,7 @@ public class MainActivity
             );
         } else {
             totalString = getString(
-                    R.string.main_activity_placeholder_footer_total_no_budget,
+                    R.string.footer_total_no_budget,
                     price
             );
             colorId = R.color.text_color_price_normal;
@@ -394,7 +397,7 @@ public class MainActivity
         if (item instanceof SingleShoppingListItem) {
             onUncheckedSingleItemClick((SingleShoppingListItem) item);
         } else {
-            showToastMessage("This operation is not supported yet.");
+            onExtendedItemClick((ExtendedShoppingListItem) item);
         }
     }
 
@@ -405,9 +408,27 @@ public class MainActivity
         dialog.show(getSupportFragmentManager(), "OnUncheckedSingleItemClickDialogFragment");
     }
 
+    private void onExtendedItemClick(ExtendedShoppingListItem item) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        OnExtendedItemClickDialogFragment dialog =
+                new OnExtendedItemClickDialogFragment();
+        dialog.setItem(item);
+        dialog.setBudgetIsSet(mBudgetIsSet);
+        dialog.setBudget(mBudget);
+        dialog.setPreviousPrice(mShoppingListAdapter.getTotalPrice());
+        dialog.setDataChangeListener(mShoppingListAdapter);
+        dialog.setAutocompleteDictionary(mAutocompleteDictionary);
+
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        dialog.show(transaction, "OnExtendedItemClickDialogFragment");
+
+    }
+
     private void onCheckedItemClick(ShoppingListItem item) {
         if (item instanceof SingleShoppingListItem) {
             onCheckedSingleItemClick((SingleShoppingListItem) item);
+        } else {
+            onExtendedItemClick((ExtendedShoppingListItem) item);
         }
     }
 
@@ -432,6 +453,10 @@ public class MainActivity
                         new String[0]
         );
         dialog.show(getSupportFragmentManager(), "AddItemDialogFragment");
+    }
+
+    public void resetItems() {
+        new RetrieveItemsTask(this).execute();
     }
 
     private void showToastMessage(String message) {
@@ -466,46 +491,32 @@ public class MainActivity
     private static class RetrieveItemsTask extends AsyncTask<Void, Void, List<ShoppingListItem>> {
         private final WeakReference<MainActivity> ref;
 
-        RetrieveItemsTask(MainActivity activity) {
-            ref = new WeakReference<>(activity);
+        RetrieveItemsTask(MainActivity a) {
+            ref = new WeakReference<>(a);
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            MainActivity mainActivity = ref.get();
-            mainActivity.mLoadingIndicatorConstraintLayout.setVisibility(View.VISIBLE);
-            mainActivity.mRecyclerView.setVisibility(View.GONE);
-            mainActivity.mErrorConstraintLayout.setVisibility(View.GONE);
+            MainActivity ma = ref.get();
+            ma.mLoadingIndicatorConstraintLayout.setVisibility(View.VISIBLE);
+            ma.mRecyclerView.setVisibility(View.GONE);
+            ma.mErrorConstraintLayout.setVisibility(View.GONE);
         }
 
         @Override
         protected List<ShoppingListItem> doInBackground(Void... nothing) {
-            SingleShoppingListItemDao singleItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
-            ExtendedShoppingListItemDao extendedItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
-
-            List<SingleShoppingListItem> singleItems = singleItemDao.getAllItems();
-            List<ExtendedShoppingListItem> extendedItems = extendedItemDao.getAllItems();
-
-            List<ShoppingListItem> allItems = new ArrayList<>();
-            allItems.addAll(singleItems);
-            allItems.addAll(extendedItems);
-            return allItems;
+            ShoppingListDao dao = AppDatabase.getDatabaseInstance(ref.get()).shoppingListDao();
+            return dao.getAllItems();
         }
 
         @Override
         protected void onPostExecute(List<ShoppingListItem> items) {
             super.onPostExecute(items);
-
-            MainActivity mainActivity = ref.get();
-            mainActivity.mShoppingListAdapter.setItemList(items);
-
-            // Hide the loading indicator and show the list of items or a message saying there are
-            // no items
-            mainActivity.mLoadingIndicatorConstraintLayout.setVisibility(View.GONE);
-            mainActivity.switchViews(items.isEmpty());
+            MainActivity ma = ref.get();
+            ma.mShoppingListAdapter.setItemList(items);
+            ma.mLoadingIndicatorConstraintLayout.setVisibility(View.GONE);
+            ma.switchViews(items.isEmpty());
         }
     }
 

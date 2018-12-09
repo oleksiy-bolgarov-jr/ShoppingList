@@ -1,23 +1,4 @@
-/*
- * Copyright (c) 2018 Oleksiy Bolgarov.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-package org.bolgarov.alexjr.shoppinglist.dialogs;
+package org.bolgarov.alexjr.shoppinglist.dialogs.extendedItems;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;
@@ -27,48 +8,51 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
+import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntry;
+import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntryDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
+import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItemJoin;
 import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.R;
-import org.bolgarov.alexjr.shoppinglist.ShoppingListAdapter;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.util.Objects;
 
-public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
-
-    private static final String TAG = OnUncheckedSingleItemClickDialogFragment.class.getSimpleName();
+public class AddSubitemDialogFragment extends DialogFragment {
+    private static final String TAG = AddSubitemDialogFragment.class.getSimpleName();
 
     private static final BigDecimal OUNCES_PER_POUND = new BigDecimal(16);
 
-    private static WeakReference<FragmentActivity> activityRef;
-
-    private SingleShoppingListItem mItem;
+    private ExtendedShoppingListItem mExtendedItem;
     private int mCurrentQuantity;
-
-    private ShoppingListAdapter mAdapter;
-    private boolean mBudgetIsSet;
-    private BigDecimal mBudget;
+    private ExtendedItemAdapter mAdapter;
+    private String[] mAutocompleteDictionary;
 
     private int mWhichRadioButtonChecked;
+    private AutoCompleteTextView mItemNameEditText;
+    private CheckBox mAddToAutocompleteCheckBox;
     private TextView mPriceTitleTextView;
     private LinearLayout mIfPerUnitSelectedLayout, mIfPerKgSelectedLayout, mIfPerLbSelectedLayout;
     private EditText mPriceEditText;
@@ -82,20 +66,6 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
 
     private Button mPositiveButton;
 
-    /**
-     * Creates a dialog warning the user that he is over budget.
-     */
-    private static void warnOverBudget() {
-        AlertDialog.Builder warningDialogBuilder =
-                new AlertDialog.Builder(Objects.requireNonNull(activityRef.get()));
-        warningDialogBuilder.setMessage(R.string.over_budget_dialog_body)
-                .setPositiveButton(
-                        R.string.over_budget_dialog_dismiss_button,
-                        (dialog, which) -> dialog.dismiss()
-                );
-        warningDialogBuilder.create().show();
-    }
-
     @Override
     public void onStart() {
         super.onStart();
@@ -104,7 +74,6 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
             mPositiveButton = d.getButton(DialogInterface.BUTTON_POSITIVE);
             mPositiveButton.setEnabled(false);
         }
-        activityRef = new WeakReference<>(getActivity());
         updateDialog();
     }
 
@@ -120,6 +89,10 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
         @SuppressLint("InflateParams")
         View view = inflater.inflate(R.layout.dialog_buying_item, null);
 
+        mItemNameEditText = view.findViewById(R.id.et_item_name);
+        mItemNameEditText.setVisibility(View.VISIBLE);
+        mAddToAutocompleteCheckBox = view.findViewById(R.id.save_item_check_box);
+        mAddToAutocompleteCheckBox.setVisibility(View.VISIBLE);
         RadioGroup pricingRadioGroup = view.findViewById(R.id.radio_group_pricing);
         mPriceTitleTextView = view.findViewById(R.id.tv_price_title);
         mIfPerUnitSelectedLayout = view.findViewById(R.id.ll_if_per_unit_selected);
@@ -136,21 +109,24 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
         mTaxTextView = view.findViewById(R.id.tv_tax);
         mTotalPriceTextView = view.findViewById(R.id.tv_total_item_price);
 
-        builder.setTitle(mItem.getName())
+        builder.setTitle(R.string.item_dialog_subitem_title)
                 .setView(view)
                 .setPositiveButton(
-                        R.string.item_dialog_unchecked_positive,
+                        R.string.item_dialog_subitem_positive,
                         (dialog, which) -> onPositive()
                 )
                 .setNegativeButton(
                         R.string.item_dialog_unchecked_negative,
                         (dialog, which) -> dialog.dismiss()
-                )
-                .setNeutralButton(
-                        R.string.item_dialog_unchecked_neutral,
-                        (dialog, which) -> onNeutral()
                 );
         Dialog dialog = builder.create();
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                Objects.requireNonNull(getContext()),
+                android.R.layout.simple_dropdown_item_1line,
+                mAutocompleteDictionary
+        );
+        mItemNameEditText.setAdapter(adapter);
 
         mWhichRadioButtonChecked = R.id.rb_per_unit;    // This is the default one
 
@@ -179,20 +155,8 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
             updateDialog();
         });
 
-        mPriceEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                updateDialog();
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
+        mItemNameEditText.addTextChangedListener(new UpdateDialogTextChangedListener());
+        mPriceEditText.addTextChangedListener(new UpdateDialogTextChangedListener());
 
         perUnitSetup();
         perKgSetup();
@@ -202,28 +166,100 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        try {
-            ItemClickDialogListener listener =
-                    (ItemClickDialogListener) context;
-            mAdapter = listener.getAdapter();
-            mBudgetIsSet = listener.isBudgetSet();
-            mBudget = listener.getBudget();
-        } catch (ClassCastException e) {
-            throw new ClassCastException(context.toString() +
-                    " must implement ItemClickDialogListener");
-        }
+    public int show(FragmentTransaction transaction, String tag) {
+        checkValidState();
+        return super.show(transaction, tag);
     }
 
-    public void setItem(SingleShoppingListItem item) {
-        mItem = item;
+    @Override
+    public void show(FragmentManager manager, String tag) {
+        checkValidState();
+        super.show(manager, tag);
+    }
+
+    public void setAdapter(ExtendedItemAdapter adapter) {
+        mAdapter = adapter;
+    }
+
+    public void setExtendedItem(ExtendedShoppingListItem item) {
+        mExtendedItem = item;
+    }
+
+    public void setAutocompleteDictionary(String[] autocompleteDictionary) {
+        mAutocompleteDictionary = autocompleteDictionary;
+    }
+
+    private void perUnitSetup() {
+        mDecreaseQuantityButton.setOnClickListener(v -> {
+            mCurrentQuantity--;
+            mDecreaseQuantityButton.setEnabled(mCurrentQuantity > 0);
+            updateDialog();
+        });
+        mIncreaseQuantityButton.setOnClickListener(v -> {
+            mCurrentQuantity++;
+            mDecreaseQuantityButton.setEnabled(mCurrentQuantity > 0);
+            updateDialog();
+        });
+    }
+
+    private void perKgSetup() {
+        mKilogramsEditText.addTextChangedListener(new UpdateDialogTextChangedListener());
+    }
+
+    private void perLbSetup() {
+        mPoundsEditText.addTextChangedListener(new UpdateDialogTextChangedListener());
+        mOuncesEditText.addTextChangedListener(new UpdateDialogTextChangedListener());
+    }
+
+    private void onPositive() {
+        String itemName = mItemNameEditText.getText().toString();
+        SingleShoppingListItem item = new SingleShoppingListItem(itemName, false, null, -1);
+
+        switch (mWhichRadioButtonChecked) {
+            case R.id.rb_per_unit:
+                item.setPerUnitOrPerWeight(SingleShoppingListItem.PER_UNIT);
+                item.setBasePrice(
+                        new BigDecimal(padWithZeros(mPriceEditText.getText().toString()))
+                );
+                item.setQuantity(mCurrentQuantity);
+                break;
+            case R.id.rb_per_kg:
+                item.setPerUnitOrPerWeight(SingleShoppingListItem.PER_WEIGHT);
+                item.setBasePrice(
+                        new BigDecimal(padWithZeros(mPriceEditText.getText().toString()))
+                );
+                item.setWeightInKilograms(
+                        new BigDecimal(padWithZeros(mKilogramsEditText.getText().toString()))
+                );
+                break;
+            case R.id.rb_per_pound:
+                BigDecimal pounds =
+                        new BigDecimal(padWithZeros(mPoundsEditText.getText().toString()));
+                item.setPerUnitOrPerWeight(SingleShoppingListItem.PER_WEIGHT);
+                item.setPricePerPound(
+                        new BigDecimal(padWithZeros(mPriceEditText.getText().toString()))
+                );
+                if (!TextUtils.isEmpty(mOuncesEditText.getText())) {
+                    int ounces = Integer.parseInt(mOuncesEditText.getText().toString());
+                    item.setWeightInPounds(pounds, ounces);
+                } else {
+                    item.setWeightInPounds(pounds);
+                }
+                break;
+        }
+
+        new AddSubItemTask(
+                getContext(),
+                mAdapter,
+                mAddToAutocompleteCheckBox.isChecked()
+        ).execute(mExtendedItem, item);
     }
 
     private void updateDialog() {
         String quantityString = Integer.toString(mCurrentQuantity);
         mQuantityTextView.setText(quantityString);
-        if (!TextUtils.isEmpty(mPriceEditText.getText())) {
+        if (!TextUtils.isEmpty(mItemNameEditText.getText()) &&
+                !TextUtils.isEmpty(mPriceEditText.getText())) {
             BigDecimal basePrice =
                     new BigDecimal(padWithZeros(mPriceEditText.getText().toString()));
             BigDecimal priceWithoutTax = null, tax = null, totalPrice = null;
@@ -286,114 +322,6 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
         }
     }
 
-    private void perUnitSetup() {
-        mDecreaseQuantityButton.setOnClickListener(v -> {
-            mCurrentQuantity--;
-            mDecreaseQuantityButton.setEnabled(mCurrentQuantity > 0);
-            updateDialog();
-        });
-        mIncreaseQuantityButton.setOnClickListener(v -> {
-            mCurrentQuantity++;
-            mDecreaseQuantityButton.setEnabled(mCurrentQuantity > 0);
-            updateDialog();
-        });
-    }
-
-    private void perKgSetup() {
-        mKilogramsEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                updateDialog();
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
-    }
-
-    private void perLbSetup() {
-        mPoundsEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                updateDialog();
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
-        mOuncesEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                updateDialog();
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
-    }
-
-    /**
-     * The positive button updates the item to have the values specified by the user, moves the
-     * item to the checked position, and warns the user if the item caused the total price to go
-     * over budget.
-     */
-    private void onPositive() {
-        mItem.setStatus(ShoppingListItem.CHECKED);
-
-        switch (mWhichRadioButtonChecked) {
-            case R.id.rb_per_unit:
-                mItem.setPerUnitOrPerWeight(SingleShoppingListItem.PER_UNIT);
-                mItem.setBasePrice(
-                        new BigDecimal(padWithZeros(mPriceEditText.getText().toString())));
-                mItem.setQuantity(mCurrentQuantity);
-                break;
-            case R.id.rb_per_kg:
-                mItem.setPerUnitOrPerWeight(SingleShoppingListItem.PER_WEIGHT);
-                mItem.setBasePrice(
-                        new BigDecimal(padWithZeros(mPriceEditText.getText().toString())));
-                mItem.setWeightInKilograms(
-                        new BigDecimal(padWithZeros(mKilogramsEditText.getText().toString())));
-                break;
-            case R.id.rb_per_pound:
-                BigDecimal pounds =
-                        new BigDecimal(padWithZeros(mPoundsEditText.getText().toString()));
-                mItem.setPerUnitOrPerWeight(SingleShoppingListItem.PER_WEIGHT);
-                mItem.setPricePerPound(
-                        new BigDecimal(padWithZeros(mPriceEditText.getText().toString())));
-                if (!TextUtils.isEmpty(mOuncesEditText.getText())) {
-                    int ounces = Integer.parseInt(mOuncesEditText.getText().toString());
-                    mItem.setWeightInPounds(pounds, ounces);
-                } else {
-                    mItem.setWeightInPounds(pounds);
-                }
-                break;
-        }
-        new UpdateItemTask(this, true).execute(mItem);
-    }
-
-    /**
-     * The neutral button moves the item to the "not buying" position.
-     */
-    private void onNeutral() {
-        mItem.setStatus(ShoppingListItem.NOT_BUYING);
-        new UpdateItemTask(this, false).execute(mItem);
-    }
-
     /**
      * To prevent number parsing errors, adds a 0 at the beginning or end of the numeric string if
      * it has a decimal point at either the beginning or the end.
@@ -408,37 +336,72 @@ public class OnUncheckedSingleItemClickDialogFragment extends DialogFragment {
                         numericString;
     }
 
-    private static void showToastMessage(Context context, int messageResId) {
-        Toast.makeText(context, messageResId, Toast.LENGTH_SHORT).show();
+    /**
+     * Throws an IllegalStateException if an ExtendedShoppingListItem or an ExtendedItemAdapter
+     * have not been set.
+     */
+    private void checkValidState() {
+        if (mExtendedItem == null || mAdapter == null) {
+            throw new IllegalStateException("You must set an ExtendedShoppingListItem and an " +
+                    "ExtendedItemAdapter before calling this method.");
+        }
     }
 
-    private static class UpdateItemTask
-            extends AsyncTask<SingleShoppingListItem, Void, SingleShoppingListItem> {
-        private final WeakReference<OnUncheckedSingleItemClickDialogFragment> ref;
-        private final boolean positive;
+    private static class AddSubItemTask
+            extends AsyncTask<ShoppingListItem, Void, ShoppingListItem[]> {
+        private final WeakReference<Context> ref;
+        private final ExtendedItemAdapter adapter;
+        private final boolean addToAutocomplete;
 
-        UpdateItemTask(OnUncheckedSingleItemClickDialogFragment fragment, boolean positive) {
-            ref = new WeakReference<>(fragment);
-            this.positive = positive;
+        AddSubItemTask(Context context, ExtendedItemAdapter adapter, boolean addToAutocomplete) {
+            ref = new WeakReference<>(context);
+            this.adapter = adapter;
+            this.addToAutocomplete = addToAutocomplete;
         }
 
         @Override
-        protected SingleShoppingListItem doInBackground(SingleShoppingListItem... items) {
-            ShoppingListDao dao =
-                    AppDatabase.getDatabaseInstance(ref.get().getContext()).shoppingListDao();
-            dao.update(items[0]);
-            return items[0];
-        }
+        protected ShoppingListItem[] doInBackground(ShoppingListItem... items) {
+            ExtendedShoppingListItem extendedItem = (ExtendedShoppingListItem) items[0];
+            SingleShoppingListItem singleItem = (SingleShoppingListItem) items[1];
+            ShoppingListDao dao = AppDatabase.getDatabaseInstance(ref.get()).shoppingListDao();
 
-        @Override
-        protected void onPostExecute(SingleShoppingListItem singleShoppingListItem) {
-            super.onPostExecute(singleShoppingListItem);
-            ref.get().mAdapter.onDataChanged();
+            int insertedId = (int) dao.insert(singleItem);
 
-            if (positive && ref.get().mBudgetIsSet
-                    && ref.get().mAdapter.getTotalPrice().compareTo(ref.get().mBudget) > 0) {
-                warnOverBudget();
+            ShoppingListItemJoin join = new ShoppingListItemJoin(extendedItem.getId(), insertedId);
+            dao.insertJoin(join);
+
+            if (addToAutocomplete) {
+                AutocompleteEntryDao autocompleteDao =
+                        AppDatabase.getDatabaseInstance(ref.get()).autocompleteEntryDao();
+                autocompleteDao.insertAll(new AutocompleteEntry(singleItem.getName()));
             }
+
+            return new ShoppingListItem[]{extendedItem, singleItem};
+        }
+
+        @Override
+        protected void onPostExecute(ShoppingListItem[] items) {
+            super.onPostExecute(items);
+            ExtendedShoppingListItem extendedItem = (ExtendedShoppingListItem) items[0];
+            SingleShoppingListItem singleItem = (SingleShoppingListItem) items[1];
+
+            extendedItem.addItem(singleItem);
+            adapter.onDataChanged();
+        }
+    }
+
+    private class UpdateDialogTextChangedListener implements TextWatcher {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            updateDialog();
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
         }
     }
 }

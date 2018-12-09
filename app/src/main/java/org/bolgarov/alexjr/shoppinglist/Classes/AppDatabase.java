@@ -29,6 +29,7 @@ import android.content.Context;
         entities = {
                 SingleShoppingListItem.class,
                 ExtendedShoppingListItem.class,
+                ShoppingListItemJoin.class,
                 AutocompleteEntry.class
         },
         version = 1
@@ -47,9 +48,7 @@ public abstract class AppDatabase extends RoomDatabase {
         return instance;
     }
 
-    public abstract SingleShoppingListItemDao singleShoppingListItemDao();
-
-    public abstract ExtendedShoppingListItemDao extendedShoppingListItemDao();
-
     public abstract AutocompleteEntryDao autocompleteEntryDao();
+
+    public abstract ShoppingListDao shoppingListDao();
 }

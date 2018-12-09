@@ -32,7 +32,6 @@ import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -46,10 +45,9 @@ import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
 import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntry;
 import org.bolgarov.alexjr.shoppinglist.Classes.AutocompleteEntryDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItemDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.R;
 
 import java.lang.ref.WeakReference;
@@ -228,7 +226,8 @@ public class AddItemDialogFragment extends DialogFragment {
                     mListener.getAdapter().getItemCount()
             );
         }
-        new AddItemTask(getContext(), mListener, saveToAutocomplete, neutral).execute(item);
+
+        new AddItemTask(this, saveToAutocomplete, neutral).execute(item);
     }
 
     public void setAutocompleteDictionary(String[] autocompleteDictionary) {
@@ -241,48 +240,38 @@ public class AddItemDialogFragment extends DialogFragment {
         void onAddItemButtonClick();
 
         void updateAutocompleteDictionary();
-
-        void recreate();
     }
 
     private static class AddItemTask extends AsyncTask<ShoppingListItem, Void, ShoppingListItem> {
-        private final WeakReference<Context> ref;
-        private final AddItemDialogListener listener;
+        private final WeakReference<AddItemDialogFragment> ref;
         private final boolean addToAutocomplete;
-        private final boolean neutral;
+        private final boolean doThisAgain;
 
-        private boolean shouldFinish = true;    // TODO: May not need this
-
-        AddItemTask(Context context, AddItemDialogListener listener, boolean addToAutocomplete,
-                    boolean neutral) {
-            ref = new WeakReference<>(context);
-            this.listener = listener;
+        AddItemTask(AddItemDialogFragment thisFragment, boolean addToAutocomplete,
+                    boolean doThisAgain) {
+            ref = new WeakReference<>(thisFragment);
             this.addToAutocomplete = addToAutocomplete;
-            this.neutral = neutral;
+            this.doThisAgain = doThisAgain;
         }
 
         @Override
         protected ShoppingListItem doInBackground(ShoppingListItem... items) {
-            Log.d(TAG, "Calling doInBackground");
-
-            SingleShoppingListItemDao singleItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
-            ExtendedShoppingListItemDao extendedItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
-            AutocompleteEntryDao autocompleteEntryDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).autocompleteEntryDao();
-
+            ShoppingListDao dao =
+                    AppDatabase.getDatabaseInstance(ref.get().getContext()).shoppingListDao();
             ShoppingListItem item = items[0];
 
-            if (item instanceof SingleShoppingListItem) {
-                singleItemDao.insertAll((SingleShoppingListItem) item);
+            if (item instanceof ExtendedShoppingListItem) {
+                dao.insert((ExtendedShoppingListItem) item);
             } else {
-                extendedItemDao.insertAll((ExtendedShoppingListItem) item);
+                dao.insert((SingleShoppingListItem) item);
             }
 
             if (addToAutocomplete) {
+                AutocompleteEntryDao autocompleteDao =
+                        AppDatabase.getDatabaseInstance(ref.get().getContext())
+                                .autocompleteEntryDao();
                 AutocompleteEntry entry = new AutocompleteEntry(item.getName());
-                autocompleteEntryDao.insertAll(entry);
+                autocompleteDao.insertAll(entry);
             }
 
             return item;
@@ -290,22 +279,15 @@ public class AddItemDialogFragment extends DialogFragment {
 
         @Override
         protected void onPostExecute(ShoppingListItem item) {
-            Log.d(TAG, "Calling onPostExecute");
-
             super.onPostExecute(item);
-            listener.getAdapter().addItem(item);
+            ref.get().mListener.resetItems();
 
             if (addToAutocomplete) {
-                listener.updateAutocompleteDictionary();
+                ref.get().mListener.updateAutocompleteDictionary();
             }
 
-            if (neutral) {
-                // If the neutral button is pressed, show the same dialog again, to speed up the
-                // process of adding multiple items
-                listener.onAddItemButtonClick();
-                shouldFinish = false;
-            } else {
-                listener.recreate();    // TODO: This works, but please try to implement a more elegant solution (perhaps you do need shouldFinish after all)
+            if (doThisAgain) {
+                ref.get().mListener.onAddItemButtonClick();
             }
         }
     }

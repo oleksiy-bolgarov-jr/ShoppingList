@@ -32,7 +32,6 @@ import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -45,9 +44,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
+import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.R;
 import org.bolgarov.alexjr.shoppinglist.ShoppingListAdapter;
 
@@ -470,7 +469,7 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
                     mItem.setWeightInPounds(pounds);
                 }
         }
-        new UpdateItemTask(getContext(), mAdapter, mBudgetIsSet, mBudget).execute(mItem);
+        new UpdateItemTask(this, true).execute(mItem);
     }
 
     /**
@@ -478,7 +477,7 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
      */
     private void onNeutral() {
         mItem.reset();
-        new UpdateItemTask(getContext(), mAdapter).execute(mItem);
+        new UpdateItemTask(this, false).execute(mItem);
     }
 
     /**
@@ -486,7 +485,7 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
      * @param numericString A numeric string with at most one "."
      */
     private String addLeadingZero(String numericString) {
-        return Character.isDigit(numericString.charAt(0)) ? numericString : "0" + numericString;
+        return Character.isDigit(numericString.charAt(0)) ? numericString : ("0" + numericString);
     }
 
     private static void showToastMessage(Context context, int messageResId) {
@@ -495,70 +494,29 @@ public class OnCheckedSingleItemClickDialogFragment extends DialogFragment {
 
     private static class UpdateItemTask
             extends AsyncTask<SingleShoppingListItem, Void, SingleShoppingListItem> {
-        private final WeakReference<Context> ref;
-        private final ShoppingListAdapter adapter;
+        private final WeakReference<OnCheckedSingleItemClickDialogFragment> ref;
         private final boolean positive;
-        private final boolean budgetIsSet;
-        private final BigDecimal budget;
 
-        private ShoppingListItem itemInDatabase;
-        private boolean doInBackgroundWasExecuted = false;
-
-        UpdateItemTask(Context context, ShoppingListAdapter adapter, boolean budgetIsSet,
-                       BigDecimal budget) {
-            ref = new WeakReference<>(context);
-            this.adapter = adapter;
-            this.positive = true;
-            this.budgetIsSet = budgetIsSet;
-            this.budget = budget;
-        }
-
-        /**
-         * This constructor is to be used in the neutral button callback.
-         *
-         * @param context The calling context
-         * @param adapter The ShoppingListAdapter in ths fragment
-         */
-        UpdateItemTask(Context context, ShoppingListAdapter adapter) {
-            ref = new WeakReference<>(context);
-            this.adapter = adapter;
-            this.positive = false;
-            this.budgetIsSet = false;
-            this.budget = BigDecimal.ZERO;
+        UpdateItemTask(OnCheckedSingleItemClickDialogFragment fragment, boolean positive) {
+            ref = new WeakReference<>(fragment);
+            this.positive = positive;
         }
 
         @Override
         protected SingleShoppingListItem doInBackground(SingleShoppingListItem... items) {
-            Log.d(TAG, "Calling doInBackground");
-            Context context = ref.get();
-
-            SingleShoppingListItemDao dao = AppDatabase.getDatabaseInstance(context)
-                    .singleShoppingListItemDao();
+            ShoppingListDao dao =
+                    AppDatabase.getDatabaseInstance(ref.get().getContext()).shoppingListDao();
             dao.update(items[0]);
-
-            itemInDatabase = dao.get(items[0].getId());
-            doInBackgroundWasExecuted = true;
             return items[0];
         }
 
         @Override
-        protected void onPostExecute(SingleShoppingListItem item) {
-            Log.d(TAG, "Calling onPostExecute");
-            super.onPostExecute(item);
-            adapter.onDataChanged();
+        protected void onPostExecute(SingleShoppingListItem singleShoppingListItem) {
+            super.onPostExecute(singleShoppingListItem);
+            ref.get().mAdapter.onDataChanged();
 
-            // Check if the item was actually saved, because I have no idea why, but sometimes the
-            // item is not actually updated
-            Context context = ref.get();
-            if (!doInBackgroundWasExecuted) {
-                Toast.makeText(context, "doInBackground was not executed", Toast.LENGTH_SHORT).show();
-            }
-            if (itemInDatabase == null || !itemInDatabase.equals(item)) {
-                showToastMessage(context, R.string.item_dialog_error_failed_to_save);
-                return;
-            }
-
-            if (positive && budgetIsSet && adapter.getTotalPrice().compareTo(budget) > 0) {
+            if (positive && ref.get().mBudgetIsSet
+                    && ref.get().mAdapter.getTotalPrice().compareTo(ref.get().mBudget) > 0) {
                 warnOverBudget();
             }
         }

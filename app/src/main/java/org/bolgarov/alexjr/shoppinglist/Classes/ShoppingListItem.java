@@ -3,6 +3,7 @@ package org.bolgarov.alexjr.shoppinglist.Classes;
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.math.BigDecimal;
@@ -10,7 +11,7 @@ import java.math.BigDecimal;
 /**
  * Represents any entry in the shopping list.
  */
-public abstract class ShoppingListItem {
+public abstract class ShoppingListItem implements Comparable<ShoppingListItem> {
     @Ignore
     public static final int UNCHECKED = 0;
     @Ignore
@@ -31,7 +32,6 @@ public abstract class ShoppingListItem {
     @ColumnInfo(name = "order_in_list")
     private int orderInList;
 
-    // TODO: Update this Javadoc when you create the ExtendedShoppingListItem class
     /**
      * Creates a new ShoppingListItem with the given name, optionality, and condition. All
      * other associated values (price, weight, etc.) are set to 0.
@@ -41,8 +41,9 @@ public abstract class ShoppingListItem {
      * @param condition   A condition under which the user is allowed to buy the item if the user
      *                    wishes to specify such a condition, null otherwise.
      * @param orderInList The order that this item appears in the shopping list, where the first
-     *                    item has order 0. A future implementation will require this to be set to
-     *                    -1 in some cases.
+     *                    item has order 0. In some cases, a SingleShoppingListItem may have order
+     *                    -1; see the javadoc for the constructor of SingleShoppingListItem for
+     *                    details. This is never -1 for ExtendedShoppingListItems.
      */
     ShoppingListItem(String name, boolean optional, @Nullable String condition,
                      int orderInList) {
@@ -84,11 +85,8 @@ public abstract class ShoppingListItem {
         this.status = status;
     }
 
-    // TODO: I don't think this method is needed for anything except the Room database, so update
-    // the javadoc
     /**
-     * Returns the ID of this item. This is used so that a persisted array can be used to determine
-     * the correct order of the items in the list.
+     * Returns the ID of this item in the SQL database.
      *
      * @return The ID of this item
      */
@@ -151,5 +149,16 @@ public abstract class ShoppingListItem {
      */
     public BigDecimal getTotalPrice() {
         return getTotalPriceWithoutTax().add(this.getTax());
+    }
+
+    @Override
+    public int compareTo(@NonNull ShoppingListItem other) {
+        return this.name.compareToIgnoreCase(other.getName());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof ShoppingListItem &&
+                this.name.equalsIgnoreCase(((ShoppingListItem) other).getName());
     }
 }

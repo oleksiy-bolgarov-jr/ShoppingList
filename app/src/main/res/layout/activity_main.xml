@@ -101,7 +101,7 @@
                     android:paddingStart="8dp">
 
                     <TextView
-                        android:id="@+id/tv_total_price"
+                        android:id="@+id/tv_this_item_price"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -110,7 +110,7 @@
                         android:textSize="@dimen/text_size_variable" />
 
                     <TextView
-                        android:id="@+id/tv_over_budget_footer"
+                        android:id="@+id/over_budget_warning"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/main_activity_footer_over_budget_warning"

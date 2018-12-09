@@ -31,9 +31,11 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.dialogs.DeleteItemDialogFragment;
+import org.bolgarov.alexjr.shoppinglist.dialogs.extendedItems.MainActivityDataChangeListener;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -41,7 +43,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapter.SLAViewHolder> {
+public class ShoppingListAdapter
+        extends
+        RecyclerView.Adapter<ShoppingListAdapter.SLAViewHolder>
+        implements
+        MainActivityDataChangeListener {
 
     private static final String TAG = ShoppingListAdapter.class.getSimpleName();
 
@@ -184,6 +190,23 @@ public class ShoppingListAdapter extends RecyclerView.Adapter<ShoppingListAdapte
                             df.format(singleItem.getWeightInKilograms())
                     );
                 }
+            }
+            holder.mPriceCalculationTextView.setText(calculation);
+        } else {
+            ExtendedShoppingListItem extendedItem = (ExtendedShoppingListItem) item;
+            String calculation;
+            if (mClickHandler.isTaxIncluded()) {
+                calculation = mContext.getString(
+                        R.string.item_placeholder_extended_n_items,
+                        extendedItem.getTotalPriceWithoutTax(),
+                        extendedItem.getItemCount(),
+                        extendedItem.getTax()
+                );
+            } else {
+                calculation = mContext.getString(
+                        R.string.item_placeholder_extended_n_items_no_tax,
+                        extendedItem.getItemCount()
+                );
             }
             holder.mPriceCalculationTextView.setText(calculation);
         }

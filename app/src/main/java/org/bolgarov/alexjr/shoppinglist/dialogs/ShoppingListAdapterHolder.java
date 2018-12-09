@@ -24,5 +24,5 @@ import org.bolgarov.alexjr.shoppinglist.ShoppingListAdapter;
 public interface ShoppingListAdapterHolder {
     ShoppingListAdapter getAdapter();
 
-    void recreate();
+    void resetItems();
 }

@@ -17,13 +17,11 @@ import android.widget.FrameLayout;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
 import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItemDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -57,13 +55,12 @@ public class RearrangeItemsActivity extends AppCompatActivity
                     .setMessage(R.string.rearrange_confirm_dialog_body)
                     .setPositiveButton(
                             R.string.rearrange_confirm_dialog_positive,
-                            (dialog, id) ->
-                                    new UpdateOrderTask(this)
-                                            .execute(mAdapter.getItemList())
+                            (dialog, which) ->
+                                    new UpdateOrderTask(this).execute(mAdapter.getItemList())
                     )
                     .setNegativeButton(
                             R.string.rearrange_confirm_dialog_negative,
-                            (dialog, id) -> dialog.dismiss())
+                            (dialog, which) -> dialog.dismiss())
                     .show();
         });
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
@@ -112,74 +109,55 @@ public class RearrangeItemsActivity extends AppCompatActivity
     private static class RetrieveItemsTask extends AsyncTask<Void, Void, List<ShoppingListItem>> {
         private final WeakReference<RearrangeItemsActivity> ref;
 
-        RetrieveItemsTask(RearrangeItemsActivity context) {
-            ref = new WeakReference<>(context);
+        RetrieveItemsTask(RearrangeItemsActivity a) {
+            ref = new WeakReference<>(a);
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            RearrangeItemsActivity activity = ref.get();
-            activity.mLoadingDisplay.setVisibility(View.VISIBLE);
-            activity.mListContainer.setVisibility(View.GONE);
+            ref.get().mLoadingDisplay.setVisibility(View.VISIBLE);
+            ref.get().mListContainer.setVisibility(View.GONE);
         }
 
         @Override
         protected List<ShoppingListItem> doInBackground(Void... nothing) {
-            SingleShoppingListItemDao singleItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
-            ExtendedShoppingListItemDao extendedItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
-
-            List<SingleShoppingListItem> singleItems = singleItemDao.getAllItems();
-            List<ExtendedShoppingListItem> extendedItems = extendedItemDao.getAllItems();
-
-            List<ShoppingListItem> allItems = new ArrayList<>();
-            allItems.addAll(singleItems);
-            allItems.addAll(extendedItems);
-            return allItems;
+            return AppDatabase.getDatabaseInstance(ref.get()).shoppingListDao().getAllItems();
         }
 
         @Override
         protected void onPostExecute(List<ShoppingListItem> items) {
             super.onPostExecute(items);
-            RearrangeItemsActivity activity = ref.get();
-
-            activity.mAdapter.setItemList(items);
-
-            activity.mLoadingDisplay.setVisibility(View.GONE);
-            activity.mListContainer.setVisibility(View.VISIBLE);
+            ref.get().mAdapter.setItemList(items);
+            ref.get().mLoadingDisplay.setVisibility(View.GONE);
+            ref.get().mListContainer.setVisibility(View.VISIBLE);
         }
     }
 
     private static class UpdateOrderTask extends AsyncTask<List<ShoppingListItem>, Void, Void> {
         private final WeakReference<RearrangeItemsActivity> ref;
 
-        UpdateOrderTask(RearrangeItemsActivity context) {
-            ref = new WeakReference<>(context);
+        UpdateOrderTask(RearrangeItemsActivity a) {
+            ref = new WeakReference<>(a);
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            RearrangeItemsActivity activity = ref.get();
-            activity.mLoadingDisplay.setVisibility(View.VISIBLE);
-            activity.mListContainer.setVisibility(View.GONE);
+            ref.get().mLoadingDisplay.setVisibility(View.VISIBLE);
+            ref.get().mListContainer.setVisibility(View.GONE);
         }
 
         @SafeVarargs
         @Override
-        protected final Void doInBackground(List<ShoppingListItem>... itemListAndThenGarbage) {
-            SingleShoppingListItemDao singleItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
-            ExtendedShoppingListItemDao extendedItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
-            List<ShoppingListItem> items = itemListAndThenGarbage[0];
+        protected final Void doInBackground(List<ShoppingListItem>... lists) {
+            List<ShoppingListItem> items = lists[0];
+            ShoppingListDao dao = AppDatabase.getDatabaseInstance(ref.get()).shoppingListDao();
             for (ShoppingListItem item : items) {
                 if (item instanceof SingleShoppingListItem) {
-                    singleItemDao.update((SingleShoppingListItem) item);
+                    dao.update((SingleShoppingListItem) item);
                 } else {
-                    extendedItemDao.update((ExtendedShoppingListItem) item);
+                    dao.update((ExtendedShoppingListItem) item);
                 }
             }
 
@@ -192,4 +170,5 @@ public class RearrangeItemsActivity extends AppCompatActivity
             ref.get().finish();
         }
     }
+
 }

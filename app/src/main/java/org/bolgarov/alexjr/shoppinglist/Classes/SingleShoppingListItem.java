@@ -53,19 +53,17 @@ public class SingleShoppingListItem extends ShoppingListItem {
     @ColumnInfo(name = "per_unit_or_per_weight")
     private boolean perUnitOrPerWeight = PER_UNIT;
 
-    // TODO: Update this Javadoc when you create the ExtendedShoppingListItem class
-
     /**
-     * Creates a new SingleShoppingListItem with the given name, optionality, and condition. All other
-     * associated values (price, weight, etc.) are set to 0.
+     * Creates a new SingleShoppingListItem with the given name, optionality, and condition. All
+     * other associated values (price, weight, etc.) are set to 0.
      *
      * @param name        The name of the item (e.g. "Milk", "Eggs", etc.)
      * @param optional    True iff the item is optional.
      * @param condition   A condition under which the user is allowed to buy the item if the user
      *                    wishes to specify such a condition, null otherwise.
      * @param orderInList The order that this item appears in the list, where the first item has
-     *                    order 0. A future implementation will require this to be set to -1 in
-     *                    some cases.
+     *                    order 0. This is to be set to -1 if the item is one of the
+     *                    SingleShoppingListItems in the item list of an ExtendedShoppingListItem.
      */
     public SingleShoppingListItem(String name, boolean optional, @Nullable String condition,
                                   int orderInList) {

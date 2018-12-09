@@ -35,9 +35,11 @@
     <string name="main_activity_footer_asterisk_footnote">* Optional</string>
     <string name="main_activity_footer_dagger_footnote">&#8224; Has condition</string>
 
-    <!-- Main activity placeholder strings -->
-    <string name="main_activity_placeholder_footer_total_with_budget">$%.2f / $%.2f</string>
-    <string name="main_activity_placeholder_footer_total_no_budget">$%.2f</string>
+    <!-- Footer placeholder strings -->
+    <string name="footer_total_with_budget">$%.2f / $%.2f</string>
+    <string name="footer_total_no_budget">$%.2f</string>
+    <string name="footer_grand_total_with_budget">Total: $%.2f / $%.2f</string>
+    <string name="footer_grand_total_no_budget">Total: $%.2f</string>
 
     <!-- Values for main menu -->
     <string name="main_menu_option_calculator">Calculator</string>
@@ -52,6 +54,8 @@
     <string name="item_placeholder_calc_per_weight_no_tax">$%.2f &#215; %skg =\u0020</string>
     <string name="item_placeholder_calc_per_weight">$%.2f &#215; %skg + $%.2f tax =\u0020</string>
     <string name="item_placeholder_price">$%.2f</string>
+    <string name="item_placeholder_extended_n_items">$%.2f for %d items + $%.2f tax =\u0020</string>
+    <string name="item_placeholder_extended_n_items_no_tax">%d items\u0020</string>
 
     <!-- Other general potentially useful values -->
     <string name="empty" />     <!-- empty string -->
@@ -94,6 +98,8 @@
     <string name="delete_all_dialog_negative">No, cancel</string>
 
     <!-- Values for item-specific dialogs -->
+    <string name="item_dialog_subitem_title">Add new item to this category</string>
+    <string name="item_dialog_hint_item_name">Item name</string>
     <string name="per_unit">Per unit</string>
     <string name="per_pound">Per lb</string>
     <string name="per_kg">Per kg</string>
@@ -114,6 +120,7 @@
     <string name="tax">Tax</string>
     <string name="total_price">Total price</string>
     <string name="item_dialog_unchecked_positive">Confirm</string>
+    <string name="item_dialog_subitem_positive">Add this item</string>
     <string name="item_dialog_unchecked_neutral">I am not buying this</string>
     <string name="item_dialog_unchecked_negative">Cancel</string>
     <string name="item_dialog_checked_positive">Save changes</string>
@@ -132,6 +139,7 @@
     <string name="item_dialog_description_increase_quantity">Increase quantity by 1</string>
     <string name="item_dialog_error_failed_to_save">Failed to save this item. Please try
         again.</string>
+    <string name="item_dialog_extended_total_price_footer">$</string>
 
     <!-- Item dialog placeholders -->
     <string name="item_dialog_placeholder_total_price_no_tax">$%.2f</string>

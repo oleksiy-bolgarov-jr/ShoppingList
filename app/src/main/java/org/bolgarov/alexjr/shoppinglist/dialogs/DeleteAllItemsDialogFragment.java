@@ -49,7 +49,7 @@ public class DeleteAllItemsDialogFragment extends DialogFragment {
                 .setMessage(R.string.delete_all_dialog_body)
                 .setPositiveButton(
                         R.string.delete_all_dialog_positive,
-                        (dialog, which) -> new DeleteAllItemsTask(getContext(), mAdapter).execute()
+                        (dialog, which) -> new DeleteAllItemsTask(this).execute()
                 )
                 .setNegativeButton(
                         R.string.delete_all_dialog_negative,
@@ -71,26 +71,25 @@ public class DeleteAllItemsDialogFragment extends DialogFragment {
     }
 
     private static class DeleteAllItemsTask extends AsyncTask<Void, Void, Void> {
-        private final WeakReference<Context> ref;
-        private final ShoppingListAdapter adapter;
+        private final WeakReference<DeleteAllItemsDialogFragment> ref;
 
-        DeleteAllItemsTask(Context context, ShoppingListAdapter adapter) {
-            ref = new WeakReference<>(context);
-            this.adapter = adapter;
+        DeleteAllItemsTask(DeleteAllItemsDialogFragment fragment) {
+            ref = new WeakReference<>(fragment);
         }
 
         @Override
         protected Void doInBackground(Void... nothing) {
-            AppDatabase db = AppDatabase.getDatabaseInstance(ref.get());
-            db.singleShoppingListItemDao().deleteAllItems();
-            db.extendedShoppingListItemDao().deleteAllItems();
+            AppDatabase
+                    .getDatabaseInstance(ref.get().getContext())
+                    .shoppingListDao()
+                    .deleteAllItems();
             return null;
         }
 
         @Override
-        protected void onPostExecute(Void nothing) {
-            super.onPostExecute(nothing);
-            adapter.deleteAll();
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            ref.get().mAdapter.deleteAll();
         }
     }
 }

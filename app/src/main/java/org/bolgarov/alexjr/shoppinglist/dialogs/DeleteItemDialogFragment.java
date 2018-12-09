@@ -29,10 +29,9 @@ import android.support.v7.app.AlertDialog;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
 import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItemDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.R;
 import org.bolgarov.alexjr.shoppinglist.ShoppingListAdapter;
 
@@ -45,6 +44,7 @@ public class DeleteItemDialogFragment extends DialogFragment {
 
     private ShoppingListItem mItem;
     private ShoppingListAdapter mAdapter;
+    private ShoppingListAdapterHolder mHolder;
 
     @NonNull
     @Override
@@ -55,7 +55,7 @@ public class DeleteItemDialogFragment extends DialogFragment {
                 .setMessage(R.string.delete_item_dialog_body)
                 .setPositiveButton(
                         R.string.delete_item_dialog_positive,
-                        (dialog, id) -> new DeleteItemTask(getContext(), mAdapter).execute(mItem)
+                        (dialog, id) -> new DeleteItemTask(this).execute(mItem)
                 )
                 .setNegativeButton(
                         R.string.delete_item_dialog_negative,
@@ -70,6 +70,7 @@ public class DeleteItemDialogFragment extends DialogFragment {
         super.onAttach(context);
         try {
             mAdapter = ((ShoppingListAdapterHolder) context).getAdapter();
+            mHolder = (ShoppingListAdapterHolder) context;
         } catch (ClassCastException e) {
             throw new ClassCastException(context.toString() +
                     " must implement ShoppingListAdapterHolder");
@@ -82,26 +83,22 @@ public class DeleteItemDialogFragment extends DialogFragment {
 
     private static class DeleteItemTask
             extends AsyncTask<ShoppingListItem, Void, ShoppingListItem> {
-        private final WeakReference<Context> ref;
-        private final ShoppingListAdapter adapter;
+        private final WeakReference<DeleteItemDialogFragment> ref;
 
-        DeleteItemTask(Context context, ShoppingListAdapter adapter) {
-            ref = new WeakReference<>(context);
-            this.adapter = adapter;
+        DeleteItemTask(DeleteItemDialogFragment fragment) {
+            ref = new WeakReference<>(fragment);
         }
 
         @Override
         protected ShoppingListItem doInBackground(ShoppingListItem... items) {
-            SingleShoppingListItemDao singleItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
-            ExtendedShoppingListItemDao extendedItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
+            ShoppingListDao dao =
+                    AppDatabase.getDatabaseInstance(ref.get().getContext()).shoppingListDao();
             ShoppingListItem item = items[0];
 
-            if (item instanceof SingleShoppingListItem) {
-                singleItemDao.delete((SingleShoppingListItem) item);
+            if (item instanceof ExtendedShoppingListItem) {
+                dao.delete((ExtendedShoppingListItem) item);
             } else {
-                extendedItemDao.delete((ExtendedShoppingListItem) item);
+                dao.delete((SingleShoppingListItem) item);
             }
 
             return item;
@@ -110,7 +107,7 @@ public class DeleteItemDialogFragment extends DialogFragment {
         @Override
         protected void onPostExecute(ShoppingListItem deletedItem) {
             super.onPostExecute(deletedItem);
-            adapter.deleteItem(deletedItem);
+            ref.get().mHolder.resetItems();
         }
     }
 }

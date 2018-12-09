@@ -33,12 +33,10 @@ import android.widget.TextView;
 
 import org.bolgarov.alexjr.shoppinglist.Classes.AppDatabase;
 import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.ExtendedShoppingListItemDao;
+import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListDao;
 import org.bolgarov.alexjr.shoppinglist.Classes.ShoppingListItem;
 import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItem;
-import org.bolgarov.alexjr.shoppinglist.Classes.SingleShoppingListItemDao;
 import org.bolgarov.alexjr.shoppinglist.R;
-import org.bolgarov.alexjr.shoppinglist.ShoppingListAdapter;
 
 import java.lang.ref.WeakReference;
 import java.util.Objects;
@@ -76,7 +74,7 @@ public class OnConditionedItemClickDialogFragment extends DialogFragment {
                         R.string.item_dialog_unchecked_neutral,
                         (dialog, which) -> {
                             mItem.setStatus(ShoppingListItem.NOT_BUYING);
-                            new UpdateItemTask(getContext(), mListener.getAdapter()).execute(mItem);
+                            new UpdateItemTask(this).execute(mItem);
                         }
                 );
         return builder.create();
@@ -103,35 +101,28 @@ public class OnConditionedItemClickDialogFragment extends DialogFragment {
 
     private static class UpdateItemTask
             extends AsyncTask<ShoppingListItem, Void, ShoppingListItem> {
-        private final WeakReference<Context> ref;
-        private final ShoppingListAdapter adapter;
+        private final WeakReference<OnConditionedItemClickDialogFragment> ref;
 
-        UpdateItemTask(Context context, ShoppingListAdapter adapter) {
-            ref = new WeakReference<>(context);
-            this.adapter = adapter;
+        UpdateItemTask(OnConditionedItemClickDialogFragment fragment) {
+            ref = new WeakReference<>(fragment);
         }
 
         @Override
         protected ShoppingListItem doInBackground(ShoppingListItem... items) {
-            SingleShoppingListItemDao singleItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).singleShoppingListItemDao();
-            ExtendedShoppingListItemDao extendedItemDao =
-                    AppDatabase.getDatabaseInstance(ref.get()).extendedShoppingListItemDao();
-            ShoppingListItem item = items[0];
-
-            if (item instanceof SingleShoppingListItem) {
-                singleItemDao.update((SingleShoppingListItem) item);
+            ShoppingListDao dao =
+                    AppDatabase.getDatabaseInstance(ref.get().getContext()).shoppingListDao();
+            if (items[0] instanceof ExtendedShoppingListItem) {
+                dao.update((ExtendedShoppingListItem) items[0]);
             } else {
-                extendedItemDao.update((ExtendedShoppingListItem) item);
+                dao.update((SingleShoppingListItem) items[0]);
             }
-
-            return item;
+            return null;
         }
 
         @Override
         protected void onPostExecute(ShoppingListItem item) {
             super.onPostExecute(item);
-            adapter.onDataChanged();
+            ref.get().mListener.getAdapter().onDataChanged();
         }
     }
 }

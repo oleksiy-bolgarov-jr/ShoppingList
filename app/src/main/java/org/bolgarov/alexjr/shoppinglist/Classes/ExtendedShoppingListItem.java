@@ -1,14 +1,18 @@
 package org.bolgarov.alexjr.shoppinglist.Classes;
 
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
 import android.support.annotation.Nullable;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity(tableName = "extended_shopping_list_items")
+@Entity(
+        tableName = "extended_shopping_list_items"
+)
 public class ExtendedShoppingListItem extends ShoppingListItem {
+    @Ignore
     private List<SingleShoppingListItem> subItems = new ArrayList<>();
 
     /**
@@ -46,6 +50,62 @@ public class ExtendedShoppingListItem extends ShoppingListItem {
     }
 
     /**
+     * Adds a subitem to this extended item in such a manner that the list of subitems is sorted in
+     * alphabetical order.
+     *
+     * @param item The item to add
+     */
+    public void addItem(SingleShoppingListItem item) {
+        if (subItems.isEmpty()) {
+            subItems.add(item);
+            return;
+        }
+        if (subItems.get(0).compareTo(item) > 0) {
+            subItems.add(0, item);
+            return;
+        }
+        if (subItems.get(subItems.size() - 1).compareTo(item) <= 0) {
+            subItems.add(item);
+            return;
+        }
+
+        int min = 0, max = subItems.size() - 1;
+        while (max - min > 1) {
+            int index = min + (max - min) / 2;
+            if (subItems.get(index).compareTo(item) > 0) {
+                max = index;
+            } else {
+                min = index;
+            }
+        }
+        subItems.add(max, item);
+    }
+
+    /**
+     * Removes the given subitem from this extended item, if it exists. Returns true if successful,
+     * false if item was not in the list.
+     *
+     * @param item The item to be removed
+     * @return True iff successful
+     */
+    public boolean removeItem(SingleShoppingListItem item) {
+        return subItems.remove(item);
+    }
+
+    /**
+     * Returns the number of single items in this extended item.
+     *
+     * @return Read the javadoc.
+     */
+    public int getItemCount() {
+        return subItems.size();
+    }
+
+    public SingleShoppingListItem get(int index) {
+        return subItems.get(index);
+    }
+
+    /**
      * Resets this item, setting this item to unchecked and clearing the list of single items.
      */
     @Override
@@ -60,7 +120,7 @@ public class ExtendedShoppingListItem extends ShoppingListItem {
      * @return The total price of this item without tax
      */
     @Override
-    BigDecimal getTotalPriceWithoutTax() {
+    public BigDecimal getTotalPriceWithoutTax() {
         BigDecimal result = BigDecimal.ZERO;
         for (SingleShoppingListItem item : subItems) {
             result = result.add(item.getTotalPriceWithoutTax());
