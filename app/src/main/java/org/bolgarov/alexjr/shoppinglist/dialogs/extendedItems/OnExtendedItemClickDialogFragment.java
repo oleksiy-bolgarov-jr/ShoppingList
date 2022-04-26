@@ -57,7 +57,7 @@ public class OnExtendedItemClickDialogFragment
     private boolean mBudgetIsSet;
     private BigDecimal mBudget, mPreviousPrice;
 
-    private FloatingActionButton mConfirmButton, mNotBuyingButton;
+    private FloatingActionButton mConfirmButton, mNotBuyingButton, mResetButton;
 
     /**
      * Creates a dialog warning the user that he is over budget.
@@ -107,6 +107,7 @@ public class OnExtendedItemClickDialogFragment
         mRecyclerView = view.findViewById(R.id.rv_item_list);
         mConfirmButton = view.findViewById(R.id.fab_extended_item_confirm);
         mNotBuyingButton = view.findViewById(R.id.fab_extended_item_not_buying);
+        mResetButton = view.findViewById(R.id.fab_extended_item_reset);
         mAddSubitemButton = view.findViewById(R.id.fab_extended_item_add);
         mPriceTextView = view.findViewById(R.id.tv_this_item_price);
         mOverBudgetWarning = view.findViewById(R.id.over_budget_warning);
@@ -124,13 +125,8 @@ public class OnExtendedItemClickDialogFragment
 
         mAddSubitemButton.setOnClickListener(v -> onAddItemButtonClick());
         mConfirmButton.setOnClickListener(v -> onDoneButtonClick());
-        mNotBuyingButton.setOnClickListener(mItem.getStatus() == ShoppingListItem.UNCHECKED ?
-                new OnNotBuyingClickListener() :
-                new OnResetClickListener()
-        );
-        if (mItem.getStatus() == ShoppingListItem.CHECKED) {
-            mNotBuyingButton.setImageResource(R.drawable.ic_reset_white_24dp);
-        }
+        mNotBuyingButton.setOnClickListener(v -> onNotBuyingButtonClick());
+        mResetButton.setOnClickListener(v -> onResetButtonClick());
 
         return view;
     }
@@ -217,14 +213,6 @@ public class OnExtendedItemClickDialogFragment
         }
         mPriceTextView.setTextColor(getResources().getColor(colourId));
         mTotalPriceTextView.setTextColor(getResources().getColor(colourId));
-        mNotBuyingButton.setImageResource(mItem.getItemCount() > 0 ?
-                R.drawable.ic_reset_white_24dp :
-                R.drawable.ic_not_buying_white_24dp
-        );
-        mNotBuyingButton.setOnClickListener(mItem.getItemCount() > 0 ?
-                new OnResetClickListener() :
-                new OnNotBuyingClickListener()
-        );
     }
 
     public void updateDialog() {
@@ -248,6 +236,17 @@ public class OnExtendedItemClickDialogFragment
         new UpdateTask(getContext(), this).execute(mItem);
     }
 
+    private void onNotBuyingButtonClick() {
+        mItem.reset();
+        mItem.setStatus(ShoppingListItem.NOT_BUYING);
+        new UpdateTask(getContext(), this, true).execute(mItem);
+    }
+
+    private void onResetButtonClick() {
+        mItem.reset();
+        new UpdateTask(getContext(), this, true).execute(mItem);
+    }
+
     private BigDecimal getThisItemPrice() {
         return mItem.getTotalPrice();
     }
@@ -260,43 +259,32 @@ public class OnExtendedItemClickDialogFragment
             extends AsyncTask<ExtendedShoppingListItem, Void, ExtendedShoppingListItem> {
         private final WeakReference<Context> ref;
         private final OnExtendedItemClickDialogFragment dialog;
+        private final boolean resetting;
 
-        UpdateTask(Context context, OnExtendedItemClickDialogFragment dialog) {
+        UpdateTask(Context context, OnExtendedItemClickDialogFragment dialog, boolean resetting) {
             ref = new WeakReference<>(context);
             this.dialog = dialog;
+            this.resetting = resetting;
+        }
+
+        UpdateTask(Context context, OnExtendedItemClickDialogFragment dialog) {
+            this(context, dialog, false);
         }
 
         @Override
         protected ExtendedShoppingListItem doInBackground(ExtendedShoppingListItem... items) {
             ShoppingListDao dao = AppDatabase.getDatabaseInstance(ref.get()).shoppingListDao();
+            if (resetting) dao.deleteAllSubitems(items[0].getId());
             dao.update(items[0]);
             return items[0];
         }
 
         @Override
-        protected void onPostExecute(ExtendedShoppingListItem items) {
-            super.onPostExecute(items);
+        protected void onPostExecute(ExtendedShoppingListItem item) {
+            super.onPostExecute(item);
+            if (resetting) item.reset();
             dialog.mDataChangeListener.onDataChanged();
             dialog.dismiss();
         }
     }
-
-    private class OnNotBuyingClickListener implements View.OnClickListener {
-        @Override
-        public void onClick(View v) {
-            mItem.setStatus(ShoppingListItem.NOT_BUYING);
-            mDataChangeListener.onDataChanged();
-            dismiss();
-        }
-    }
-
-    private class OnResetClickListener implements View.OnClickListener {
-        @Override
-        public void onClick(View v) {
-            mItem.reset();
-            mDataChangeListener.onDataChanged();
-            dismiss();
-        }
-    }
-
 }

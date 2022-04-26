@@ -376,6 +376,9 @@ public class AddSubitemDialogFragment extends DialogFragment {
                 autocompleteDao.insertAll(new AutocompleteEntry(singleItem.getName()));
             }
 
+            // To ensure that the ID of the single item object matches the ID in the database
+            singleItem.setId(insertedId);
+
             return new ShoppingListItem[]{extendedItem, singleItem};
         }
 

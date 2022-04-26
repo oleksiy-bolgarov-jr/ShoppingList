@@ -129,7 +129,7 @@ public class ShoppingListAdapter
                 holder.mPriceCalculationTextView.setText("");
                 holder.mPriceTextView.setText("");
                 break;
-            default:    // SingleShoppingListItem.UNCHECKED
+            default:    // ShoppingListItem.UNCHECKED
                 holder.mContainingLinearLayout.setBackground(holder.DEFAULT_BACKGROUND);
                 holder.mItemNameTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);
                 holder.mPriceTextView.setTextColor(holder.DEFAULT_TEXT_COLOR);

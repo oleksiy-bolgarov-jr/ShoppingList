@@ -70,6 +70,12 @@ public abstract class ShoppingListDao {
     @Insert
     public abstract void insertJoin(ShoppingListItemJoin join);
 
+    @Query("DELETE FROM single_shopping_list_items " +
+            "WHERE id IN (SELECT item_id " +
+            "             FROM shopping_list_item_join " +
+            "             WHERE group_id = :categoryId)")
+    public abstract void deleteAllSubitems(int categoryId);
+
     @Query("DELETE FROM single_shopping_list_items")
     abstract void deleteAllSingleItems();
 

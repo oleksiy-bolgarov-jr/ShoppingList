@@ -95,11 +95,9 @@ public abstract class ShoppingListItem implements Comparable<ShoppingListItem> {
     }
 
     /**
-     * This method is only to be used by the Room database. Do not call this method, or else errors
-     * will occur.
+     * Sets the ID of this item
      *
-     * @param id This method is only to be used by the Room database. Do not call this method, or
-     *           else errors will occur.
+     * @param id The ID to be set
      */
     public void setId(int id) {
         this.id = id;

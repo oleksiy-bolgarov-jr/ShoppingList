@@ -80,6 +80,17 @@
         android:src="@drawable/ic_not_buying_white_24dp"
         app:backgroundTint="#F44336"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab_extended_item_reset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_reset_white_24dp"
+        app:backgroundTint="#EF6C00"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toLeftOf="@id/fab_extended_item_confirm" />
 
     <android.support.design.widget.FloatingActionButton
