@@ -19,10 +19,10 @@
 
 package org.bolgarov.alexjr.shoppinglist.Classes;
 
-import android.arch.persistence.room.ColumnInfo;
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
-import android.support.annotation.Nullable;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.annotation.Nullable;
 
 import java.math.BigDecimal;
 

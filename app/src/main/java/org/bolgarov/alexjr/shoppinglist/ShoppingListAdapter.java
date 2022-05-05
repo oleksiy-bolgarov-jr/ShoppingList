@@ -22,8 +22,8 @@ package org.bolgarov.alexjr.shoppinglist;
 import android.content.Context;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -292,6 +292,11 @@ public class ShoppingListAdapter
     public void deleteItem(ShoppingListItem item) {
         mAllItems.remove(item);
         onDataChanged();
+    }
+
+    public void refreshItem(ShoppingListItem item) {
+        deleteItem(item);
+        addItem(item);
     }
 
     public void deleteAll() {
